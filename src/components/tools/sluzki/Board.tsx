@@ -1,9 +1,8 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import Draggable, { DraggableEventHandler } from 'react-draggable';
-import styled from 'styled-components';
-import { X, Link as LinkIcon, User } from 'lucide-react';
+import Draggable from 'react-draggable';
+import { Plus, X, Link as LinkIcon, User, Download, Info } from 'lucide-react';
 
 // --- TIPOS DE DATOS ---
 type NodeType = 'family' | 'friend' | 'work' | 'community';
@@ -12,8 +11,8 @@ interface NodeData {
   id: string;
   name: string;
   type: NodeType;
-  x: number;
-  y: number;
+  x: number; // Coordenada X relativa al centro
+  y: number; // Coordenada Y relativa al centro
 }
 
 interface EdgeData {
@@ -22,171 +21,103 @@ interface EdgeData {
   to: string;
 }
 
-// --- CONFIGURACIÓN VISUAL ---
-const COLORS = {
-  family: { bg: '#dcfce7', border: '#86efac', text: '#15803d', label: 'FAMILIA' },
-  friend: { bg: '#fef9c3', border: '#fde047', text: '#a16207', label: 'AMIGOS' },
-  work:   { bg: '#dbeafe', border: '#93c5fd', text: '#1e40af', label: 'TRABAJO' },
-  community: { bg: '#f3e8ff', border: '#d8b4fe', text: '#7e22ce', label: 'COMUNIDAD' },
+// --- CONFIGURACIÓN VISUAL (Temas de color) ---
+const THEME = {
+  family:    { bg: 'bg-emerald-50',  border: 'border-emerald-400', text: 'text-emerald-700', label: 'Familia', dot: 'bg-emerald-500' },
+  friend:    { bg: 'bg-amber-50',    border: 'border-amber-400',   text: 'text-amber-700',   label: 'Amigos',  dot: 'bg-amber-400' },
+  work:      { bg: 'bg-blue-50',     border: 'border-blue-400',    text: 'text-blue-700',    label: 'Laboral', dot: 'bg-blue-500' },
+  community: { bg: 'bg-purple-50',   border: 'border-purple-400',  text: 'text-purple-700',  label: 'Comunidad', dot: 'bg-purple-500' },
 };
 
-// --- ESTILOS ---
-const BoardContainer = styled.div`
-  position: relative; width: 800px; height: 800px; background-color: white;
-  border-radius: 8px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); margin: 0 auto; user-select: none;
-`;
-
-const Toolbar = styled.div`
-  position: absolute; top: 10px; left: 10px; z-index: 50;
-  background: white; padding: 8px; border-radius: 8px; border: 1px solid #e2e8f0;
-  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-  display: flex; flex-direction: column; gap: 8px;
-`;
-
-const ActionButton = styled.button<{ $active?: boolean }>`
-  display: flex; align-items: center; gap: 8px; padding: 6px 12px;
-  background: ${props => props.$active ? '#eff6ff' : 'white'};
-  border: 1px solid ${props => props.$active ? '#3b82f6' : '#cbd5e1'};
-  color: ${props => props.$active ? '#1d4ed8' : '#475569'};
-  border-radius: 6px; font-size: 12px; font-weight: 500; cursor: pointer;
-  transition: all 0.2s;
-  &:hover { background: #f8fafc; border-color: #94a3b8; }
-`;
-
-const BackgroundSVG = styled.svg`
-  position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;
-  z-index: 1;
-  .axis-line { stroke: #cbd5e1; stroke-width: 1; }
-  .circle-line { stroke: #e2e8f0; stroke-width: 1; stroke-dasharray: 5, 5; fill: none; }
-  .connection-line { stroke: #64748b; stroke-width: 2; }
-`;
-
-const QuadrantLabel = styled.div`
-  position: absolute; font-weight: 700; color: #94a3b8; font-size: 14px; text-transform: uppercase; z-index: 0;
-  &.familia { top: 20px; left: 20px; }
-  &.amigos { top: 20px; right: 20px; }
-  &.laborales { bottom: 20px; left: 20px; }
-  &.comunitarias { bottom: 20px; right: 20px; }
-`;
-
-const CenterNode = styled.div<{ $isTarget?: boolean }>`
-  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-  width: 60px; height: 60px; background-color: ${props => props.$isTarget ? '#3b82f6' : '#1e293b'};
-  color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center;
-  z-index: 10; font-weight: bold; font-size: 12px; cursor: pointer;
-  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.2);
-  transition: background-color 0.2s;
-`;
-
-const CardContainer = styled.div<{ $bgColor: string; $borderColor: string; $textColor: string; $isTarget?: boolean }>`
-  background-color: ${props => props.$bgColor};
-  border: 2px solid ${props => props.$isTarget ? '#3b82f6' : props.$borderColor};
-  color: ${props => props.$textColor};
-  border-radius: 8px; padding: 8px; width: 120px; text-align: center; cursor: grab;
-  /* position: absolute se maneja vía style inline en el componente padre para draggable */
-  box-shadow: 0 2px 4px rgb(0 0 0 / 0.1);
-  display: flex; flex-direction: column; align-items: center;
-  &:active { cursor: grabbing; z-index: 30; }
-
-  input {
-    background: transparent; border: none; text-align: center; width: 100%;
-    font-weight: 600; color: inherit; outline: none; font-size: 14px;
-    &::placeholder { color: inherit; opacity: 0.7; }
-  }
-
-  .delete-btn {
-    position: absolute; top: -8px; right: -8px; width: 20px; height: 20px;
-    background: #ef4444; color: white; border-radius: 50%; display: flex;
-    align-items: center; justify-content: center; cursor: pointer; opacity: 0;
-    transition: opacity 0.2s;
-    border: none;
-  }
-
-  &:hover .delete-btn { opacity: 1; }
-  .label { font-size: 9px; font-weight: 800; text-transform: uppercase; margin-top: 4px; opacity: 0.8; }
-`;
-
-// --- COMPONENTE AISLADO PARA EL NODO ARRASTRABLE (SOLUCIÓN REACT 19) ---
-const DraggableNode = ({ 
-  node, 
-  onDrag, 
-  onDelete, 
-  onChangeName, 
-  onClick, 
-  isTarget 
-}: {
-  node: NodeData;
-  onDrag: (id: string, x: number, y: number) => void;
-  onDelete: () => void;
-  onChangeName: (val: string) => void;
-  onClick: () => void;
-  isTarget: boolean;
-}) => {
-  // ESTO ES LA CLAVE: El useRef debe estar dentro del componente hijo
-  const nodeRef = useRef(null);
-  const config = COLORS[node.type];
+// --- SUB-COMPONENTE: NODO INDIVIDUAL ---
+const DraggableNode = ({ node, onDrag, onDelete, onChangeName, onClick, isTarget, isSelected }: any) => {
+  const nodeRef = useRef(null); // Referencia necesaria para React 18+
+  const style = THEME[node.type as NodeType];
 
   return (
     <Draggable
-      nodeRef={nodeRef} // Pasamos la referencia a Draggable
-      bounds="parent"
+      nodeRef={nodeRef}
       position={{ x: node.x, y: node.y }}
       onDrag={(e, data) => onDrag(node.id, data.x, data.y)}
     >
       <div 
-        ref={nodeRef} // Y asignamos la referencia al div contenedor
-        style={{ position: 'absolute' }} // Importante para posicionamiento
+        ref={nodeRef} 
+        className="absolute z-20 cursor-grab active:cursor-grabbing group"
         onClick={(e) => { e.stopPropagation(); onClick(); }}
       >
-        <CardContainer 
-          $bgColor={config.bg} 
-          $borderColor={config.border} 
-          $textColor={config.text}
-          $isTarget={isTarget}
-        >
-          <button className="delete-btn" onClick={(e) => { e.stopPropagation(); onDelete(); }}>
-            <X size={12} />
+        {/* Círculo Visual del Nodo */}
+        <div className={`
+          w-20 h-20 rounded-full flex flex-col items-center justify-center
+          border-2 shadow-sm transition-all duration-200 bg-white
+          ${style.border}
+          ${isTarget ? 'ring-4 ring-blue-300 scale-105' : ''} /* Efecto al seleccionar para unir */
+          ${isSelected ? 'ring-2 ring-slate-400' : ''}
+          hover:shadow-md
+          -translate-x-1/2 -translate-y-1/2 /* Centrado perfecto en la coordenada */
+        `}>
+          {/* Fondo coloreado suave */}
+          <div className={`absolute inset-1 rounded-full opacity-30 ${style.bg} -z-10`}></div>
+
+          {/* Botón Eliminar (Visible solo al pasar el mouse) */}
+          <button 
+            onClick={(e) => { e.stopPropagation(); onDelete(); }}
+            className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-1 
+                       opacity-0 group-hover:opacity-100 transition-opacity shadow-sm hover:bg-red-600 scale-75"
+            title="Eliminar persona"
+          >
+            <X size={14} />
           </button>
-          
+
+          {/* Input para el Nombre */}
           <input 
             value={node.name} 
             onChange={(e) => onChangeName(e.target.value)} 
+            className={`w-16 bg-transparent text-center text-xs font-bold focus:outline-none ${style.text} placeholder-slate-400`}
             placeholder="Nombre"
-            onMouseDown={(e) => e.stopPropagation()} 
+            onMouseDown={(e) => e.stopPropagation()} // Permite seleccionar texto sin arrastrar el nodo
           />
-          <span className="label">{config.label}</span>
-        </CardContainer>
+          
+          {/* Etiqueta del Rol */}
+          <span className="text-[8px] uppercase tracking-wider opacity-60 mt-1 font-bold text-slate-500">
+            {style.label}
+          </span>
+        </div>
       </div>
     </Draggable>
   );
 };
 
-// --- COMPONENTE PRINCIPAL ---
+// --- COMPONENTE PRINCIPAL: TABLERO ---
 export default function SluzkiBoard() {
+  // Estado
   const [nodes, setNodes] = useState<NodeData[]>([
-    { id: '1', name: 'Mamá', type: 'family', x: 360, y: 250 },
+    { id: '1', name: 'Mamá', type: 'family', x: -120, y: -120 },
   ]);
   const [edges, setEdges] = useState<EdgeData[]>([]);
-  
   const [isConnecting, setIsConnecting] = useState(false);
   const [sourceId, setSourceId] = useState<string | null>(null);
 
+  // -- FUNCIONES DE LÓGICA --
+
+  // Agregar nuevo nodo en posición aleatoria circular
   const addNode = (type: NodeType) => {
     const id = Date.now().toString();
-    const randomOffset = () => Math.floor(Math.random() * 60) - 30;
-    const newNode: NodeData = {
-      id,
-      name: 'Nuevo',
-      type,
-      x: 400 + randomOffset(),
-      y: 300 + randomOffset()
-    };
-    setNodes([...nodes, newNode]);
+    const angle = Math.random() * Math.PI * 2;
+    const radius = 180; 
+    setNodes([...nodes, {
+      id, name: 'Nuevo', type,
+      x: Math.cos(angle) * radius,
+      y: Math.sin(angle) * radius
+    }]);
   };
 
   const deleteNode = (id: string) => {
     setNodes(nodes.filter(n => n.id !== id));
     setEdges(edges.filter(e => e.from !== id && e.to !== id));
+  };
+
+  const deleteEdge = (edgeId: string) => {
+    setEdges(edges.filter(e => e.id !== edgeId));
   };
 
   const updateNodeName = (id: string, newName: string) => {
@@ -197,116 +128,177 @@ export default function SluzkiBoard() {
     setNodes(prev => prev.map(n => n.id === id ? { ...n, x, y } : n));
   };
 
+  // Lógica de conexión (Unir A con B)
   const handleNodeClick = (id: string) => {
     if (!isConnecting) return;
 
     if (sourceId === null) {
-      setSourceId(id);
+      setSourceId(id); // Primer clic
     } else {
-      if (sourceId === id) {
-        setSourceId(null);
-        return;
-      }
+      // Segundo clic
+      if (sourceId === id) { setSourceId(null); return; } // Cancelar si es el mismo
       
-      const edgeExists = edges.find(e => 
-        (e.from === sourceId && e.to === id) || (e.from === id && e.to === sourceId)
-      );
-
-      if (edgeExists) {
-        setEdges(edges.filter(e => e.id !== edgeExists.id));
+      const exists = edges.find(e => (e.from === sourceId && e.to === id) || (e.from === id && e.to === sourceId));
+      
+      if (exists) {
+        // Si ya existe, la borramos (toggle)
+        setEdges(edges.filter(e => e.id !== exists.id));
       } else {
+        // Si no existe, la creamos
         setEdges([...edges, { id: `${sourceId}-${id}`, from: sourceId, to: id }]);
       }
-      setSourceId(null);
+      setSourceId(null); // Resetear selección
     }
   };
 
-  const toggleConnectMode = () => {
-    setIsConnecting(!isConnecting);
-    setSourceId(null);
-  };
-
-  const getPosition = (id: string) => {
-    if (id === 'center') return { x: 400, y: 400 };
-    const node = nodes.find(n => n.id === id);
-    // Ajuste de centro: x + (ancho/2), y + (alto/2) aprox
-    return node ? { x: node.x + 60, y: node.y + 30 } : { x: 0, y: 0 }; 
+  // Obtener coordenadas (0,0 es el centro para el Usuario)
+  const getNodePos = (id: string) => {
+    if (id === 'center') return { x: 0, y: 0 };
+    const n = nodes.find(x => x.id === id);
+    return n ? { x: n.x, y: n.y } : { x: 0, y: 0 };
   };
 
   return (
-    <BoardContainer>
-      {/* --- BARRA DE HERRAMIENTAS --- */}
-      <Toolbar>
-        <span className="text-xs font-bold text-slate-400 mb-1 uppercase">Agregar</span>
-        <ActionButton onClick={() => addNode('family')}>
-          <div className="w-3 h-3 rounded-full bg-green-500"/> Familia
-        </ActionButton>
-        <ActionButton onClick={() => addNode('friend')}>
-          <div className="w-3 h-3 rounded-full bg-yellow-400"/> Amigo
-        </ActionButton>
-        <ActionButton onClick={() => addNode('work')}>
-          <div className="w-3 h-3 rounded-full bg-blue-500"/> Trabajo
-        </ActionButton>
-        <ActionButton onClick={() => addNode('community')}>
-          <div className="w-3 h-3 rounded-full bg-purple-500"/> Comunidad
-        </ActionButton>
+    <div className="w-full h-full relative bg-slate-50 overflow-hidden select-none font-sans">
+      
+      {/* --- 1. BARRA DE HERRAMIENTAS (FLOTANTE IZQUIERDA) --- */}
+      {/* top-32: Bajamos la barra para que no tape el título 'FAMILIA' */}
+      <div className="absolute top-32 left-6 z-50 flex flex-col gap-4 w-60 animate-in slide-in-from-left-4 duration-500">
         
-        <div className="h-px bg-slate-200 my-1"></div>
+        <div className="bg-white/95 backdrop-blur-sm p-4 rounded-2xl shadow-xl border border-slate-100">
+          <h1 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Herramientas</h1>
+          
+          {/* Botones de Acción */}
+          <div className="flex gap-2 mb-6">
+            <button 
+              onClick={() => setIsConnecting(!isConnecting)}
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all border
+                ${isConnecting 
+                  ? 'bg-blue-50 border-blue-200 text-blue-600 shadow-inner ring-2 ring-blue-100' 
+                  : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 shadow-sm hover:shadow'}`}
+            >
+              <LinkIcon size={16} /> {isConnecting ? 'Uniendo...' : 'Unir'}
+            </button>
+            <button className="p-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl hover:bg-slate-50 shadow-sm hover:shadow transition-all" title="Descargar PDF">
+              <Download size={18} />
+            </button>
+          </div>
+
+          <h1 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Nuevo Integrante</h1>
+          
+          {/* Lista de Tipos de Persona */}
+          <div className="space-y-2">
+            {[
+              { type: 'family', label: 'Familia', theme: THEME.family },
+              { type: 'friend', label: 'Amigo', theme: THEME.friend },
+              { type: 'work', label: 'Laboral', theme: THEME.work },
+              { type: 'community', label: 'Comunidad', theme: THEME.community }
+            ].map((item) => (
+              <button 
+                key={item.type} 
+                onClick={() => addNode(item.type as NodeType)} 
+                className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 border border-transparent hover:border-slate-100 transition-all group"
+              >
+                <div className={`w-3 h-3 rounded-full ${item.theme.dot} shadow-sm group-hover:scale-125 transition-transform`}></div>
+                <span className="text-sm text-slate-600 font-medium">{item.label}</span>
+                <Plus size={16} className="ml-auto text-slate-300 group-hover:text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Tip Flotante cuando se está conectando */}
+        {isConnecting && (
+          <div className="bg-blue-600 text-white p-3 rounded-xl shadow-lg shadow-blue-200 text-xs flex gap-3 items-center animate-pulse">
+             <Info size={18} className="shrink-0" /> 
+             <span>Toca dos personas para crear o borrar una conexión.</span>
+          </div>
+        )}
+      </div>
+
+      {/* --- 2. ETIQUETAS DE FONDO (Cuadrantes) --- */}
+      <div className="absolute inset-0 pointer-events-none p-10 z-0">
+        <span className="absolute top-8 left-8 text-emerald-900/5 text-6xl font-black uppercase tracking-widest">Familia</span>
+        <span className="absolute top-8 right-8 text-amber-900/5 text-6xl font-black uppercase tracking-widest">Amigos</span>
+        <span className="absolute bottom-8 left-8 text-blue-900/5 text-6xl font-black uppercase tracking-widest">Laboral</span>
+        <span className="absolute bottom-8 right-8 text-purple-900/5 text-6xl font-black uppercase tracking-widest">Comunidad</span>
+      </div>
+
+      {/* --- 3. ESTRUCTURA DEL MAPA (SVG Fondo) --- */}
+      <svg className="absolute inset-0 w-full h-full pointer-events-none z-0">
+        {/* Ejes Infinitos */}
+        <line x1="0" y1="50%" x2="100%" y2="50%" stroke="#cbd5e1" strokeWidth="2" />
+        <line x1="50%" y1="0" x2="50%" y2="100%" stroke="#cbd5e1" strokeWidth="2" />
         
-        <ActionButton $active={isConnecting} onClick={toggleConnectMode}>
-          <LinkIcon size={14} /> 
-          {isConnecting ? 'Cancelar Unión' : 'Conectar'}
-        </ActionButton>
-        {isConnecting && <div className="text-[10px] text-blue-600 px-1">Selecciona dos nodos</div>}
-      </Toolbar>
+        {/* Círculos Concéntricos */}
+        <circle cx="50%" cy="50%" r="150" fill="none" stroke="#e2e8f0" strokeWidth="1.5" strokeDasharray="6 4" />
+        <circle cx="50%" cy="50%" r="280" fill="none" stroke="#e2e8f0" strokeWidth="1.5" />
+        <circle cx="50%" cy="50%" r="420" fill="none" stroke="#f1f5f9" strokeWidth="1.5" />
+      </svg>
 
-      {/* --- FONDO Y LÍNEAS --- */}
-      <BackgroundSVG viewBox="0 0 800 800">
-        <line x1="0" y1="400" x2="800" y2="400" className="axis-line" />
-        <line x1="400" y1="0" x2="400" y2="800" className="axis-line" />
-        <circle cx="400" cy="400" r="130" className="circle-line" />
-        <circle cx="400" cy="400" r="260" className="circle-line" />
-        <circle cx="400" cy="400" r="390" className="circle-line" />
+      {/* --- 4. CONTENEDOR CENTRAL (Punto 0,0) --- */}
+      {/* Todo lo que está aquí adentro se posiciona relativo al centro exacto de la pantalla */}
+      <div className="absolute top-1/2 left-1/2 w-0 h-0 z-10">
+        
+        {/* SVG de Conexiones (Edges) */}
+        {/* Overflow visible para que las líneas se puedan dibujar fuera del div 0x0 */}
+        <svg className="absolute overflow-visible -top-[9999px] -left-[9999px] w-[19999px] h-[19999px] pointer-events-none" style={{ left: 0, top: 0 }}>
+          {edges.map(edge => {
+            const start = getNodePos(edge.from);
+            const end = getNodePos(edge.to);
+            return (
+              <g 
+                key={edge.id} 
+                className="pointer-events-auto cursor-pointer group" 
+                onClick={(e) => { e.stopPropagation(); deleteEdge(edge.id); }}
+              >
+                {/* Línea invisible gruesa (Hit area) */}
+                <line x1={start.x} y1={start.y} x2={end.x} y2={end.y} stroke="transparent" strokeWidth="25" />
+                {/* Línea visible */}
+                <line 
+                  x1={start.x} y1={start.y} x2={end.x} y2={end.y} 
+                  className="stroke-blue-400 stroke-[3px] transition-all duration-300 group-hover:stroke-red-500 group-hover:stroke-[4px]" 
+                  strokeLinecap="round"
+                />
+                {/* Icono X al pasar el mouse */}
+                <foreignObject x={(start.x+end.x)/2 - 12} y={(start.y+end.y)/2 - 12} width={24} height={24} className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                   <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white shadow-md transform scale-90 group-hover:scale-100 transition-transform">
+                     <X size={14}/>
+                   </div>
+                </foreignObject>
+              </g>
+            );
+          })}
+        </svg>
 
-        {edges.map(edge => {
-          const start = getPosition(edge.from);
-          const end = getPosition(edge.to);
-          return (
-            <line 
-              key={edge.id}
-              x1={start.x} y1={start.y}
-              x2={end.x} y2={end.y}
-              className="connection-line"
-            />
-          );
-        })}
-      </BackgroundSVG>
+        {/* NODO CENTRAL (Usuario) */}
+        <div 
+          onClick={() => handleNodeClick('center')}
+          className={`
+            absolute -translate-x-1/2 -translate-y-1/2 z-30 
+            w-24 h-24 rounded-full bg-slate-900 text-white flex flex-col items-center justify-center 
+            shadow-2xl cursor-pointer transition-all duration-300 border-4 border-white
+            ${isConnecting && sourceId === 'center' ? 'ring-4 ring-blue-500 scale-105' : 'hover:scale-105'}
+          `}
+        >
+          <User size={32} className="mb-1 opacity-90" />
+          <span className="text-[10px] font-black uppercase tracking-widest">Usuario</span>
+        </div>
 
-      <QuadrantLabel className="familia">Familia</QuadrantLabel>
-      <QuadrantLabel className="amigos">Amigos</QuadrantLabel>
-      <QuadrantLabel className="laborales">Laboral</QuadrantLabel>
-      <QuadrantLabel className="comunitarias">Comunidad</QuadrantLabel>
-
-      {/* --- NODO CENTRAL --- */}
-      <CenterNode 
-        onClick={() => handleNodeClick('center')}
-        $isTarget={isConnecting && sourceId === 'center'}
-      >
-        <User size={24} />
-      </CenterNode>
-
-      {/* --- NODOS ARRASTRABLES (AHORA USANDO EL COMPONENTE AISLADO) --- */}
-      {nodes.map((node) => (
-        <DraggableNode 
-          key={node.id} 
-          node={node}
-          onDrag={onNodeDrag}
-          onDelete={() => deleteNode(node.id)}
-          onChangeName={(val) => updateNodeName(node.id, val)}
-          onClick={() => handleNodeClick(node.id)}
-          isTarget={isConnecting && sourceId === node.id}
-        />
-      ))}
-    </BoardContainer>
+        {/* NODOS ARRASTRABLES (Personas) */}
+        {nodes.map((node) => (
+          <DraggableNode 
+            key={node.id} 
+            node={node}
+            onDrag={onNodeDrag}
+            onDelete={() => deleteNode(node.id)}
+            onChangeName={(val: string) => updateNodeName(node.id, val)}
+            onClick={() => handleNodeClick(node.id)}
+            isTarget={isConnecting && sourceId === node.id}
+            isSelected={sourceId === node.id}
+          />
+        ))}
+      </div>
+    </div>
   );
 }
