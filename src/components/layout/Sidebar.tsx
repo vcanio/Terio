@@ -12,7 +12,7 @@ interface SidebarProps {
 
 const menuItems = [
   { name: 'Inicio', href: '/', icon: LayoutDashboard },
-  { name: 'Mapa de Red (Sluzki)', href: '/tools/sluzki', icon: Network },
+  { name: 'Mapa de Red', href: '/tools/sluzki', icon: Network },
 ];
 
 export function Sidebar({ isOpen = true, toggle }: SidebarProps) {
