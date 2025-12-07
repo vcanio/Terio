@@ -98,7 +98,7 @@ const DraggableNode = ({
       >
         <div
           className={`
-          w-20 h-20 rounded-full flex flex-col items-center justify-center
+          w-16 h-16 md:w-20 md:h-20 rounded-full flex flex-col items-center justify-center
           border-[3px] shadow-sm transition-all duration-200 bg-white
           ${style.border}
           ${
@@ -130,7 +130,7 @@ const DraggableNode = ({
           <input
             value={node.name}
             onChange={(e) => onChangeName(e.target.value)}
-            className={`w-16 bg-transparent text-center text-xs font-bold focus:outline-none ${style.text} placeholder-slate-400`}
+            className={`w-14 md:w-16 bg-transparent text-center text-[10px] md:text-xs font-bold focus:outline-none ${style.text} placeholder-slate-400`}
             placeholder="Nombre"
             onMouseDown={(e) => e.stopPropagation()}
           />
@@ -149,7 +149,6 @@ export default function SluzkiBoard() {
   const [sourceId, setSourceId] = useState<string | null>(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
-  // --- ESTADOS PARA EL MODAL ---
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalName, setModalName] = useState("");
   const [modalType, setModalType] = useState<NodeType>("family");
@@ -176,30 +175,31 @@ export default function SluzkiBoard() {
       .catch((err) => console.error(err));
   }, [containerRef]);
 
-  // --- AGREGAR NODO DESDE EL MODAL ---
+  // --- AGREGAR NODO ---
   const handleAddMember = () => {
     if (!modalName.trim()) return;
 
     const id = Date.now().toString();
-    const radius = 220;
+    // Ajustamos el radio inicial para que caiga visualmente dentro de los círculos nuevos
+    const radius = 180; 
 
     let minAngle = 0,
       maxAngle = 0;
 
     switch (modalType) {
-      case "family":
+      case "family": // Arriba Izquierda
         minAngle = Math.PI;
         maxAngle = 1.5 * Math.PI;
         break;
-      case "friend":
+      case "friend": // Arriba Derecha
         minAngle = 1.5 * Math.PI;
         maxAngle = 2 * Math.PI;
         break;
-      case "work":
+      case "work": // Abajo Izquierda
         minAngle = 0.5 * Math.PI;
         maxAngle = Math.PI;
         break;
-      case "community":
+      case "community": // Abajo Derecha
         minAngle = 0;
         maxAngle = 0.5 * Math.PI;
         break;
@@ -291,24 +291,29 @@ export default function SluzkiBoard() {
     <div
       ref={containerRef}
       onMouseMove={handleMouseMove}
-      className={`w-full h-full relative bg-slate-50 overflow-hidden font-sans 
+      className={`
+        w-full h-full relative bg-slate-50 font-sans flex items-center justify-center overflow-hidden
         ${isConnecting ? "cursor-crosshair" : ""}
       `}
     >
       {/* --- 1. BARRA DE HERRAMIENTAS --- */}
-      <div className="exclude-from-export absolute top-1/2 left-6 -translate-y-1/2 z-50 flex flex-col gap-4 w-60 animate-in slide-in-from-right-4 duration-500 select-none">
-        <div className="bg-white/95 backdrop-blur-sm p-4 rounded-2xl shadow-xl border border-slate-200">
-          <h1 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">
+      <div 
+        className="exclude-from-export absolute z-50 
+          left-4 right-4 bottom-4 md:bottom-auto md:top-1/2 md:left-6 md:right-auto md:-translate-y-1/2 md:w-60
+          flex flex-col gap-4 animate-in slide-in-from-bottom-4 md:slide-in-from-left-4 duration-500 select-none pointer-events-none"
+      >
+        <div className="bg-white/95 backdrop-blur-sm p-3 md:p-4 rounded-2xl shadow-xl border border-slate-200 pointer-events-auto">
+          <h1 className="hidden md:block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">
             Herramientas
           </h1>
 
-          <div className="flex gap-2 mb-4">
+          <div className="flex gap-2 mb-0 md:mb-4">
             <button
               onClick={() => {
                 setIsConnecting(!isConnecting);
                 setSourceId(null);
               }}
-              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all border
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs md:text-sm font-semibold transition-all border
                 ${
                   isConnecting
                     ? "bg-blue-600 border-blue-600 text-white shadow-md ring-2 ring-blue-200 ring-offset-1"
@@ -325,114 +330,92 @@ export default function SluzkiBoard() {
             >
               <Download size={18} />
             </button>
+            
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="md:hidden p-2.5 bg-slate-900 text-white rounded-xl shadow-lg hover:bg-slate-800 transition-all active:scale-95"
+            >
+              <Plus size={18} />
+            </button>
           </div>
 
-          <div className="w-full h-px bg-slate-100 mb-4"></div>
-
+          <div className="hidden md:block w-full h-px bg-slate-100 mb-4"></div>
           <button
             onClick={() => setIsModalOpen(true)}
-            className="w-full py-3 bg-slate-800 text-white rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-slate-200 hover:bg-slate-700 hover:scale-[1.02] active:scale-95 transition-all"
+            className="hidden md:flex w-full py-3 bg-slate-900 text-white rounded-xl items-center justify-center gap-2 shadow-lg shadow-slate-200 hover:bg-slate-700 hover:scale-[1.02] active:scale-95 transition-all"
           >
             <Plus size={18} strokeWidth={2.5} />
-            <span className="font-semibold text-sm">Agregar Persona</span>
+            <span className="font-semibold text-sm leading-none">Agregar Nodo</span>
           </button>
         </div>
 
         {isConnecting && (
-          <div className="bg-slate-800 text-white p-3 rounded-xl shadow-lg text-xs flex gap-3 items-center animate-in fade-in slide-in-from-bottom-2">
+          <div className="bg-slate-800 text-white p-3 rounded-xl shadow-lg text-xs flex gap-3 items-center animate-in fade-in pointer-events-auto mx-auto md:mx-0 w-fit">
             <Info size={18} className="shrink-0 text-blue-300" />
             <span>
-              Haz clic en dos personas para conectarlas. <br />
+              Clic en dos nodos para conectar. <br />
               <span className="opacity-60">Esc para cancelar.</span>
             </span>
           </div>
         )}
       </div>
 
-      {/* --- 2. ETIQUETAS DE FONDO --- */}
-      <div className="absolute inset-0 pointer-events-none p-10 z-0">
-        <span className="absolute top-12 left-12 text-emerald-900/30 text-5xl font-black uppercase tracking-widest select-none">
-          Familia
-        </span>
-        <span className="absolute top-12 right-12 text-amber-900/30 text-5xl font-black uppercase tracking-widest select-none">
-          Amigos
-        </span>
-        <span className="absolute bottom-12 left-12 text-blue-900/30 text-5xl font-black uppercase tracking-widest select-none">
-          Laboral
-        </span>
-        <span className="absolute bottom-12 right-12 text-purple-900/30 text-5xl font-black uppercase tracking-widest select-none">
-          Comunidad
-        </span>
+      {/* --- 2. CONTENEDOR VISUAL CUADRADO (FONDO Y ETIQUETAS) --- */}
+      <div className="pointer-events-none absolute w-full max-w-[95vmin] aspect-square flex items-center justify-center">
+        
+        {/* ETIQUETAS DE TEXTO (Posicionadas en las esquinas, con fondo suave para evitar superposición visual) */}
+        <div className="absolute inset-0 z-0 text-2xl md:text-3xl lg:text-4xl font-black uppercase tracking-widest select-none">
+            {/* Usamos 'backdrop-blur' y un fondo muy sutil para que si una línea pasa por debajo, el texto se lea */}
+            <span className="absolute top-4 left-4 text-emerald-900/40 bg-slate-50/50 backdrop-blur-[2px] px-2 rounded-lg">
+                Familia
+            </span>
+            <span className="absolute top-4 right-4 text-amber-900/40 bg-slate-50/50 backdrop-blur-[2px] px-2 rounded-lg">
+                Amigos
+            </span>
+            <span className="absolute bottom-4 left-4 text-blue-900/40 bg-slate-50/50 backdrop-blur-[2px] px-2 rounded-lg">
+                Laboral
+            </span>
+            <span className="absolute bottom-4 right-4 text-purple-900/40 bg-slate-50/50 backdrop-blur-[2px] px-2 rounded-lg">
+                Comunidad
+            </span>
+        </div>
+
+        {/* SVG DE FONDO (Circulos reducidos para no tocar las esquinas) */}
+        <svg className="absolute inset-0 w-full h-full z-0" viewBox="0 0 1000 1000">
+          {/* Líneas Cruzadas */}
+          <line
+            x1="0" y1="500" x2="1000" y2="500"
+            stroke="#cbd5e1" strokeWidth="2" strokeDasharray="8 8"
+          />
+          <line
+            x1="500" y1="0" x2="500" y2="1000"
+            stroke="#cbd5e1" strokeWidth="2" strokeDasharray="8 8"
+          />
+          
+          {/* Círculos Concéntricos - RADIO REDUCIDO para dejar esquinas libres */}
+          {/* Antes r=450 (90% del espacio), ahora r=380 (76% del espacio) */}
+          <circle cx="500" cy="500" r="130" fill="none" stroke="#cbd5e1" strokeWidth="3" />
+          <circle cx="500" cy="500" r="260" fill="none" stroke="#cbd5e1" strokeWidth="3" />
+          <circle cx="500" cy="500" r="390" fill="none" stroke="#cbd5e1" strokeWidth="4" />
+        </svg>
       </div>
 
-      {/* --- 3. ESTRUCTURA SVG DE FONDO --- */}
-      <svg className="absolute inset-0 w-full h-full pointer-events-none z-0">
-        <line
-          x1="0"
-          y1="50%"
-          x2="100%"
-          y2="50%"
-          stroke="#cbd5e1"
-          strokeWidth="2"
-          strokeDasharray="5 5"
-        />
-        <line
-          x1="50%"
-          y1="0"
-          x2="50%"
-          y2="100%"
-          stroke="#cbd5e1"
-          strokeWidth="2"
-          strokeDasharray="5 5"
-        />
-        <circle
-          cx="50%"
-          cy="50%"
-          r="150"
-          fill="none"
-          stroke="#cbd5e1"
-          strokeWidth="2.5"
-        />
-        <circle
-          cx="50%"
-          cy="50%"
-          r="280"
-          fill="none"
-          stroke="#cbd5e1"
-          strokeWidth="2.5"
-        />
-        <circle
-          cx="50%"
-          cy="50%"
-          r="420"
-          fill="none"
-          stroke="#cbd5e1"
-          strokeWidth="3"
-        />
-      </svg>
-
-      {/* --- 4. AREA DE JUEGO (NODOS Y CONEXIONES) --- */}
-      <div className="absolute top-1/2 left-1/2 w-0 h-0 z-10">
+      {/* --- 3. ÁREA DE JUEGO (NODOS Y CONEXIONES) --- */}
+      <div className="absolute top-1/2 left-1/2 w-0 h-0 z-10 overflow-visible">
         {/* SVG PARA LÍNEAS DE CONEXIÓN */}
         <svg
           className="absolute overflow-visible -top-[9999px] -left-[9999px] w-[19999px] h-[19999px] pointer-events-none"
           style={{ left: 0, top: 0 }}
         >
-          {/* Línea temporal cuando se está arrastrando para conectar */}
           {isConnecting && sourceId && (
             <line
-              x1={sourcePos.x}
-              y1={sourcePos.y}
-              x2={mousePos.x}
-              y2={mousePos.y}
-              stroke="#3b82f6"
-              strokeWidth="2"
-              strokeDasharray="5 5"
+              x1={sourcePos.x} y1={sourcePos.y}
+              x2={mousePos.x} y2={mousePos.y}
+              stroke="#3b82f6" strokeWidth="2" strokeDasharray="5 5"
               className="opacity-60 animate-pulse"
             />
           )}
 
-          {/* Líneas existentes entre nodos */}
           {edges.map((edge) => {
             const start = getNodePos(edge.from);
             const end = getNodePos(edge.to);
@@ -447,32 +430,19 @@ export default function SluzkiBoard() {
                   deleteEdge(edge.id);
                 }}
               >
-                {/* 1. Línea invisible ancha para facilitar el click */}
                 <line
-                  x1={start.x}
-                  y1={start.y}
-                  x2={end.x}
-                  y2={end.y}
-                  stroke="transparent"
-                  strokeWidth="20"
+                  x1={start.x} y1={start.y}
+                  x2={end.x} y2={end.y}
+                  stroke="transparent" strokeWidth="20"
                 />
-
-                {/* 2. Línea visible (con fallback de color hexadecimal para la exportación) */}
                 <line
-                  x1={start.x}
-                  y1={start.y}
-                  x2={end.x}
-                  y2={end.y}
+                  x1={start.x} y1={start.y}
+                  x2={end.x} y2={end.y}
                   stroke="#94a3b8"
                   className="stroke-slate-400 stroke-[2px] transition-colors duration-300 group-hover:stroke-red-400"
                 />
-
-                {/* 3. Icono de basura (Excluido de la exportación para evitar errores de renderizado) */}
                 <foreignObject
-                  x={midX - 12}
-                  y={midY - 12}
-                  width={24}
-                  height={24}
+                  x={midX - 12} y={midY - 12} width={24} height={24}
                   className="overflow-visible pointer-events-none exclude-from-export"
                 >
                   <div className="w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 transform scale-75 group-hover:scale-100">
@@ -491,15 +461,9 @@ export default function SluzkiBoard() {
           onClick={() => handleNodeClick("center")}
           className={`
             absolute -translate-x-1/2 -translate-y-1/2 z-30 
-            w-24 h-24 rounded-full bg-slate-800 text-white flex flex-col items-center justify-center 
+            w-20 h-20 md:w-24 md:h-24 rounded-full bg-slate-800 text-white flex flex-col items-center justify-center 
             shadow-xl cursor-pointer transition-all duration-300 border-4 border-white ring-1 ring-slate-200
-            
-            {/* AQUÍ ESTÁ EL CAMBIO: Se quitó 'hover:scale-105' del final */}
-            ${
-              isConnecting && sourceId === "center"
-                ? "ring-4 ring-blue-400 scale-105"
-                : ""
-            }
+            ${isConnecting && sourceId === "center" ? "ring-4 ring-blue-400 scale-105" : ""}
           `}
         >
           <User size={32} className="mb-1 text-slate-200" />
@@ -523,9 +487,9 @@ export default function SluzkiBoard() {
         ))}
       </div>
 
-      {/* --- 5. MODAL NUEVO INTEGRANTE --- */}
+      {/* --- MODAL NUEVO INTEGRANTE --- */}
       {isModalOpen && (
-        <div className="exclude-from-export fixed inset-0 z-100 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="exclude-from-export fixed inset-0 z-100 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 scale-100 animate-in zoom-in-95 duration-200">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-lg font-bold text-slate-800">
@@ -540,7 +504,6 @@ export default function SluzkiBoard() {
             </div>
 
             <div className="space-y-4">
-              {/* Input Nombre */}
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
                   Nombre
@@ -550,13 +513,12 @@ export default function SluzkiBoard() {
                   type="text"
                   value={modalName}
                   onChange={(e) => setModalName(e.target.value)}
-                  placeholder="Ej: María, Juan, Jefe..."
+                  placeholder="Ej: María, Juan..."
                   className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                   onKeyDown={(e) => e.key === "Enter" && handleAddMember()}
                 />
               </div>
 
-              {/* Selector de Tipo (Cuadrante) */}
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
                   Cuadrante / Relación
@@ -599,7 +561,6 @@ export default function SluzkiBoard() {
                 </div>
               </div>
 
-              {/* Botón Acción */}
               <button
                 onClick={handleAddMember}
                 disabled={!modalName.trim()}
