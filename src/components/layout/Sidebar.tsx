@@ -11,7 +11,7 @@ interface SidebarProps {
 }
 
 const menuItems = [
-  { name: 'Inicio', href: '/', icon: LayoutDashboard },
+  { name: 'Inicio', href: '/', icon: LayoutDashboard, hidden: true },
   { name: 'Mapa de Red', href: '/tools/sluzki', icon: Network },
 ];
 
@@ -44,21 +44,23 @@ export function Sidebar({ isOpen = true, toggle }: SidebarProps) {
       </div>
 
       <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-        {menuItems.map((item) => {
-          const isActive = pathname === item.href;
-          return (
-            <Link 
-              key={item.href} 
-              href={item.href}
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                isActive ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
-              }`}
-            >
-              <item.icon size={20} />
-              <span className="font-medium text-sm">{item.name}</span>
-            </Link>
-          );
-        })}
+        {menuItems
+          .filter(item => !item.hidden)
+          .map((item) => {
+            const isActive = pathname === item.href;
+            return (
+              <Link 
+                key={item.href} 
+                href={item.href}
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                  isActive ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                }`}
+              >
+                <item.icon size={20} />
+                <span className="font-medium text-sm">{item.name}</span>
+              </Link>
+            );
+          })}
       </nav>
 
       <div className="p-4 border-t border-slate-800">
