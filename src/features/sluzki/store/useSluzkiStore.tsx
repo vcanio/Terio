@@ -11,6 +11,10 @@ interface SluzkiState {
   edges: EdgeData[];
   centerName: string;
   
+  // Nuevos campos para recordar la última selección
+  lastNodeType: NodeType;
+  lastNodeLevel: NetworkLevel;
+  
   // Acciones
   setCenterName: (name: string) => void;
   addNode: (name: string, type: NodeType, level: NetworkLevel) => void;
@@ -28,6 +32,10 @@ export const useSluzkiStore = create<SluzkiState>()(
       nodes: [],
       edges: [],
       centerName: "Usuario",
+      
+      // Valores por defecto iniciales
+      lastNodeType: "family",
+      lastNodeLevel: 1,
 
       setCenterName: (name) => set({ centerName: name }),
 
@@ -56,6 +64,10 @@ export const useSluzkiStore = create<SluzkiState>()(
             x: Math.cos(angle) * radius,
             y: Math.sin(angle) * radius,
           });
+
+          // ACTUALIZACIÓN: Guardamos la selección actual para la próxima vez
+          state.lastNodeType = type;
+          state.lastNodeLevel = level;
         }));
         toast.success("Nodo agregado"); // Feedback
       },

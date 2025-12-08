@@ -1,4 +1,5 @@
 /* eslint-disable react-hooks/incompatible-library */
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -7,6 +8,7 @@ import { Modal } from "@/components/ui/Modal";
 import { THEME, LEVELS } from "../utils/constants";
 import { NodeType, NetworkLevel } from "../types";
 import { NetworkLevelSchema, NodeTypeSchema } from "../schemas";
+import { useSluzkiStore } from "../store/useSluzkiStore";
 
 // Esquema específico para el formulario
 const CreateNodeSchema = z.object({
@@ -24,6 +26,9 @@ interface AddNodeModalProps {
 }
 
 export const AddNodeModal = ({ isOpen, onClose, onSubmit }: AddNodeModalProps) => {
+  // Obtenemos los últimos valores utilizados del Store
+  const { lastNodeType, lastNodeLevel } = useSluzkiStore();
+
   const {
     register,
     handleSubmit,
@@ -40,12 +45,25 @@ export const AddNodeModal = ({ isOpen, onClose, onSubmit }: AddNodeModalProps) =
     },
   });
 
+  // Efecto: Cuando se abre el modal, cargamos los valores recordados
+  useEffect(() => {
+    if (isOpen) {
+      reset({
+        name: "", // El nombre siempre empieza vacío
+        type: lastNodeType, // Usamos el último tipo seleccionado
+        level: lastNodeLevel, // Usamos el último nivel seleccionado
+      });
+    }
+  }, [isOpen, lastNodeType, lastNodeLevel, reset]);
+
   const currentType = watch("type");
   const currentLevel = watch("level");
 
   const onFormSubmit = (data: CreateNodeForm) => {
     onSubmit(data);
-    reset();
+    // Reseteamos solo el nombre para que visualmente se limpie antes de cerrar,
+    // aunque el useEffect lo sobrescribirá al abrir de nuevo.
+    reset({ ...data, name: "" });
     onClose();
   };
 
