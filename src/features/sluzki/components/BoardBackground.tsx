@@ -19,9 +19,6 @@ export const BoardBackground = () => {
         {Object.values(LEVELS).map((lvl, index) => (
           <React.Fragment key={index}>
             <circle cx="500" cy="500" r={lvl.boundary} fill="none" stroke="#475569" strokeWidth="2" />
-            <text x="505" y={500 - lvl.boundary + 20} className="fill-slate-400 text-[10px] font-bold uppercase">
-              {lvl.label}
-            </text>
           </React.Fragment>
         ))}
       </svg>

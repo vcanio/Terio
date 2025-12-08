@@ -35,9 +35,9 @@ export const THEME: Record<NodeType, ThemeConfig> = {
 
 // AJUSTE CLAVE: Separamos dónde va el nodo (radius) de dónde se dibuja la línea (boundary)
 export const LEVELS = {
-  1: { radius: 100, boundary: 180, label: "Nivel 1" },       // Nodo en 100px, Línea en 180px
-  2: { radius: 250, boundary: 330, label: "Nivel 2" },       // Nodo en 250px, Línea en 330px
-  3: { radius: 400, boundary: 480, label: "Nivel 3" }, // Nodo en 400px, Línea en 480px (Casi al borde del viewBox 500)
+  1: { radius: 100, boundary: 180, label: "Círculo Íntimo" },       // Nodo en 100px, Línea en 180px
+  2: { radius: 250, boundary: 330, label: "Círculo Social" },       // Nodo en 250px, Línea en 330px
+  3: { radius: 400, boundary: 480, label: "Conocidos / Ocasionales" }, // Nodo en 400px, Línea en 480px (Casi al borde del viewBox 500)
 };
 
 export const getInitials = (name: string) =>

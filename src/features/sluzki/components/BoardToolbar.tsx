@@ -25,7 +25,7 @@ export const BoardToolbar = ({
         
         <button onClick={onToggleConnect} className={`p-3 rounded-xl transition-all border ${isConnecting ? "bg-blue-600 border-blue-600 text-white shadow-md animate-pulse" : "bg-white border-transparent text-slate-500 hover:bg-slate-50"}`} title="Conectar"><LinkIcon size={22} /></button>
         
-        <button onClick={onToggleLegend} className={`p-3 rounded-xl transition-all border ${showLegend ? "bg-slate-100 text-slate-900" : "bg-white border-transparent text-slate-500 hover:bg-slate-50"}`} title="Ver Leyenda"><BookOpen size={22} /></button>
+        <button onClick={onToggleLegend} className={`p-3 rounded-xl transition-all border ${showLegend ? "bg-slate-100 text-slate-900" : "bg-white border-transparent text-slate-500 hover:bg-slate-50"}`} title="Ver Detalle"><BookOpen size={22} /></button>
 
         <button onClick={onDownload} disabled={isExporting} className="p-3 bg-white border border-transparent text-slate-500 rounded-xl hover:bg-slate-50 transition-all active:scale-95 disabled:opacity-50" title="Descargar"><Download size={22} /></button>
         

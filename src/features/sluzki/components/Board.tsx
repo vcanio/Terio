@@ -40,7 +40,7 @@ export default function SluzkiBoard() {
     >
       {/* 1. Fondo modularizado */}
       <div ref={diagramRef} className="absolute inset-0 flex items-center justify-center pointer-events-none">
-         <BoardBackground />
+        <BoardBackground />
       </div>
 
       {/* 2. Barra de Herramientas modularizada */}
@@ -60,7 +60,7 @@ export default function SluzkiBoard() {
         <div className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-64 bg-white/95 backdrop-blur-sm shadow-xl rounded-2xl border border-slate-200 p-4 pointer-events-none sm:pointer-events-auto transition-all animate-in fade-in zoom-in-95 duration-200">
           <div className="flex items-center gap-2 mb-3 pb-2 border-b border-slate-100">
             <BookOpen size={16} className="text-blue-500" />
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Referencias</h3>
+            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Detalle</h3>
           </div>
           <ul className="space-y-2 max-h-[60vh] overflow-y-auto pr-1 custom-scrollbar">
             {nodes.map((node, index) => {
