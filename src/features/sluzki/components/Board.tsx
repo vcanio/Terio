@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef } from "react";
-import { Plus, Link as LinkIcon, Download, Info, ChevronRight, List, Trash2, User, Check, X, RotateCcw, Target } from "lucide-react";
+import { Plus, Link as LinkIcon, Download, Info, ChevronRight, List, Trash2, User, X, RotateCcw, Target, BookOpen } from "lucide-react";
 import { useSluzkiBoard } from "@/features/sluzki/hooks/useSluzkiBoard";
 import { DraggableNode } from "@/features/sluzki/components/DraggableNode";
 import { Modal } from "@/components/ui/Modal";
@@ -9,7 +9,7 @@ import { THEME, LEVELS } from "@/features/sluzki/utils/constants";
 import { NodeType, NetworkLevel } from "@/features/sluzki/types";
 
 export default function SluzkiBoard() {
-  // Referencia para el área cuadrada del diagrama (para recortar)
+  // Referencia para el área cuadrada del diagrama
   const diagramRef = useRef<HTMLDivElement>(null);
 
   const {
@@ -21,7 +21,9 @@ export default function SluzkiBoard() {
   } = useSluzkiBoard(diagramRef);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isListOpen, setIsListOpen] = useState(false);
+  const [isListOpen, setIsListOpen] = useState(false); // Sidebar lateral editable
+  const [showLegend, setShowLegend] = useState(true); // Leyenda visual para exportar
+  
   const [modalName, setModalName] = useState("");
   const [modalType, setModalType] = useState<NodeType>("family");
   const [modalLevel, setModalLevel] = useState<NetworkLevel>(1);
@@ -30,7 +32,6 @@ export default function SluzkiBoard() {
     addNode(modalName, modalType, modalLevel);
     setModalName("");
     setIsModalOpen(false);
-    setIsListOpen(true);
   };
 
   const sourcePos = sourceId ? getNodePos(sourceId) : { x: 0, y: 0 };
@@ -46,84 +47,78 @@ export default function SluzkiBoard() {
         ${isConnecting ? "cursor-crosshair" : ""}
       `}
     >
-        {/* BARRA DE HERRAMIENTAS */}
-        <div 
-          className="
-            exclude-from-export absolute z-50 
-            bottom-6 left-1/2 -translate-x-1/2 
-            flex-row gap-4
+      {/* BARRA DE HERRAMIENTAS */}
+      <div className="exclude-from-export absolute z-50 bottom-6 left-1/2 -translate-x-1/2 flex-row gap-4 lg:left-4 lg:top-1/2 lg:bottom-auto lg:-translate-y-1/2 lg:translate-x-0 lg:flex-col lg:gap-2 pointer-events-none transition-all duration-300">
+        <div className="bg-white/95 backdrop-blur-sm p-2 rounded-2xl shadow-xl border border-slate-200 pointer-events-auto flex flex-row gap-3 items-center lg:flex-col lg:gap-2">
+          
+          <button onClick={() => setIsModalOpen(true)} className="p-3 bg-slate-900 text-white rounded-xl shadow-lg shadow-slate-900/20 hover:bg-slate-800 transition-all active:scale-95" title="Agregar Nodo"><Plus size={22} /></button>
+          
+          <div className="w-px h-8 bg-slate-200 lg:w-8 lg:h-px"></div>
+          
+          <button onClick={() => { setIsConnecting(!isConnecting); setSourceId(null); }} className={`p-3 rounded-xl transition-all border ${isConnecting ? "bg-blue-600 border-blue-600 text-white shadow-md animate-pulse" : "bg-white border-transparent text-slate-500 hover:bg-slate-50"}`} title="Conectar"><LinkIcon size={22} /></button>
+          
+          {/* Botón para mostrar/ocultar leyenda */}
+          <button onClick={() => setShowLegend(!showLegend)} className={`p-3 rounded-xl transition-all border ${showLegend ? "bg-slate-100 text-slate-900" : "bg-white border-transparent text-slate-500 hover:bg-slate-50"}`} title="Ver Leyenda"><BookOpen size={22} /></button>
 
-            lg:left-4 lg:top-1/2 lg:bottom-auto 
-            lg:-translate-y-1/2 lg:translate-x-0 
-            lg:flex-col lg:gap-2
-
-            pointer-events-none transition-all duration-300
-          "
-        >
-          <div className="bg-white/95 backdrop-blur-sm p-2 rounded-2xl shadow-xl border border-slate-200 pointer-events-auto flex flex-row gap-3 items-center lg:flex-col lg:gap-2">
-
-            {/* Agregar nodo */}
-            <button 
-              onClick={() => setIsModalOpen(true)}
-              className="p-3 bg-slate-900 text-white rounded-xl shadow-lg shadow-slate-900/20 hover:bg-slate-800 transition-all active:scale-95"
-              title="Agregar Nodo"
-            >
-              <Plus size={22} />
-            </button>
-
-            <div className="w-px h-8 bg-slate-200 lg:w-8 lg:h-px"></div>
-
-            {/* Conectar */}
-            <button 
-              onClick={() => { setIsConnecting(!isConnecting); setSourceId(null); }} 
-              className={`p-3 rounded-xl transition-all border ${
-                isConnecting 
-                  ? "bg-blue-600 border-blue-600 text-white shadow-md animate-pulse" 
-                  : "bg-white border-transparent text-slate-500 hover:bg-slate-50"
-              }`}
-              title="Conectar"
-            >
-              <LinkIcon size={22} />
-            </button>
-
-            {/* Descargar */}
-            <button 
-              onClick={downloadImage} 
-              disabled={isExporting}
-              className="p-3 bg-white border border-transparent text-slate-500 rounded-xl hover:bg-slate-50 transition-all active:scale-95 disabled:opacity-50"
-              title="Descargar"
-            >
-              <Download size={22} />
-            </button>
-
-            <div className="w-px h-8 bg-slate-200 lg:w-8 lg:h-px"></div>
-
-            {/* Limpiar */}
-            <button 
-              onClick={clearBoard}
-              className="p-3 bg-white border border-transparent text-red-400 rounded-xl hover:bg-red-50 hover:text-red-600 transition-all active:scale-95"
-              title="Limpiar"
-            >
-              <RotateCcw size={22} />
-            </button>
-
-          </div>
+          <button onClick={downloadImage} disabled={isExporting} className="p-3 bg-white border border-transparent text-slate-500 rounded-xl hover:bg-slate-50 transition-all active:scale-95 disabled:opacity-50" title="Descargar"><Download size={22} /></button>
+          
+          <div className="w-px h-8 bg-slate-200 lg:w-8 lg:h-px"></div>
+          
+          <button onClick={clearBoard} className="p-3 bg-white border border-transparent text-red-400 rounded-xl hover:bg-red-50 hover:text-red-600 transition-all active:scale-95" title="Limpiar"><RotateCcw size={22} /></button>
         </div>
+      </div>
 
+      {/* CUADRO DE LEYENDA - ACTUALIZADO: CENTRADO VERTICALMENTE A LA DERECHA */}
+      {showLegend && nodes.length > 0 && (
+        <div className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-64 bg-white/95 backdrop-blur-sm shadow-xl rounded-2xl border border-slate-200 p-4 pointer-events-none sm:pointer-events-auto transition-all animate-in fade-in zoom-in-95 duration-200">
+          
+          {/* Cabecera de la Leyenda */}
+          <div className="flex items-center gap-2 mb-3 pb-2 border-b border-slate-100">
+            <BookOpen size={16} className="text-blue-500" />
+            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+              Referencias
+            </h3>
+          </div>
 
-      {/* SIDEBAR CON DETALLE NUMÉRICO */}
-      <div id="sluzki-sidebar" className={`absolute z-40 right-0 top-0 bottom-0 w-full sm:w-80 md:w-96 bg-white/95 backdrop-blur border-l border-slate-200 shadow-2xl transition-transform duration-300 ease-in-out flex flex-col ${isListOpen ? 'translate-x-0' : 'translate-x-full'}`}>
-        <button onClick={() => setIsListOpen(!isListOpen)} className="exclude-from-export absolute -left-10 top-4 p-2.5 bg-white border border-slate-200 rounded-l-xl shadow-sm text-slate-500 hover:text-slate-900 z-50 flex items-center justify-center">
+          {/* Lista de Nodos - Altura optimizada */}
+          <ul className="space-y-2 max-h-[60vh] overflow-y-auto pr-1 custom-scrollbar">
+            {nodes.map((node, index) => {
+              const style = THEME[node.type];
+              return (
+                <li key={node.id} className="flex items-start gap-3">
+                  {/* Badge */}
+                  <span className={`
+                    shrink-0 w-6 h-6 flex items-center justify-center 
+                    rounded-full text-[10px] font-bold border shadow-sm
+                    ${style.bg} ${style.border} ${style.text}
+                  `}>
+                    {index + 1}
+                  </span>
+                  
+                  {/* Nombre */}
+                  <span className="text-sm font-medium text-slate-700 leading-snug pt-0.5 wrap-break-word w-full">
+                    {node.name}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+
+      {/* SIDEBAR EDITABLE (Derecha - Fuera de la exportación) */}
+      <div id="sluzki-sidebar" className={`exclude-from-export absolute z-40 right-0 top-0 bottom-0 w-full sm:w-80 md:w-96 bg-white/95 backdrop-blur border-l border-slate-200 shadow-2xl transition-transform duration-300 ease-in-out flex flex-col ${isListOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+        <button onClick={() => setIsListOpen(!isListOpen)} className="absolute -left-10 top-20 p-2.5 bg-white border border-slate-200 rounded-l-xl shadow-sm text-slate-500 hover:text-slate-900 z-50 flex items-center justify-center">
             {isListOpen ? <ChevronRight size={20} /> : <List size={20} />}
         </button>
 
         <div className="flex justify-between items-center p-4 border-b border-slate-100">
-            <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2"><List size={16} /> Detalle de la Red</h2>
-            <button onClick={() => setIsListOpen(false)} className="exclude-from-export md:hidden p-1 text-slate-400"><X size={20}/></button>
+            <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2"><List size={16} /> Editar Red</h2>
+            <button onClick={() => setIsListOpen(false)} className="md:hidden p-1 text-slate-400"><X size={20}/></button>
         </div>
         
         <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 m-3 shadow-sm">
-          <div className="text-[10px] uppercase font-bold text-slate-400 mb-2 flex items-center gap-1"><User size={10} /> Usuario </div>
+          <div className="text-[10px] uppercase font-bold text-slate-400 mb-2 flex items-center gap-1"><User size={10} /> Usuario Central</div>
           <input type="text" value={centerName} onChange={(e) => setCenterName(e.target.value)} className="w-full text-base font-bold bg-transparent border-b border-slate-300 focus:border-blue-500 p-1 focus:outline-none text-slate-800" placeholder="Nombre..." />
         </div>
 
@@ -141,7 +136,7 @@ export default function SluzkiBoard() {
                   </div>
                   <input type="text" value={node.name} onChange={(e) => updateNodeName(node.id, e.target.value)} className="w-full text-sm font-medium bg-transparent border-none p-0 focus:ring-0 text-slate-700" />
                 </div>
-                <button onClick={() => deleteNode(node.id)} className="exclude-from-export p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg"><Trash2 size={16} /></button>
+                <button onClick={() => deleteNode(node.id)} className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg"><Trash2 size={16} /></button>
               </div>
             );
           })}
@@ -161,9 +156,11 @@ export default function SluzkiBoard() {
         </div>
         
         <svg className="absolute inset-0 w-full h-full z-0 overflow-visible" viewBox="0 0 1000 1000">
+          {/* Ejes */}
           <line x1="0" y1="500" x2="1000" y2="500" stroke="#475569" strokeWidth="2" strokeDasharray="8 8" />
           <line x1="500" y1="0" x2="500" y2="1000" stroke="#475569" strokeWidth="2" strokeDasharray="8 8" />
           
+          {/* Círculos concéntricos */}
           <circle cx="500" cy="500" r={LEVELS[1].boundary} fill="none" stroke="#475569" strokeWidth="2" />
           <text x="505" y={500 - LEVELS[1].boundary + 20} className="fill-slate-400 text-[10px] font-bold uppercase">Nivel 1</text>
           
@@ -175,7 +172,7 @@ export default function SluzkiBoard() {
         </svg>
       </div>
 
-      {/* ÁREA DE JUEGO */}
+      {/* ÁREA DE JUEGO (NODOS Y LÍNEAS) */}
       <div className="absolute top-1/2 left-1/2 w-0 h-0 z-10 overflow-visible">
         <svg className="absolute overflow-visible -top-[9999px] -left-[9999px] w-[19999px] h-[19999px] pointer-events-none" style={{ left: 0, top: 0 }}>
           {isConnecting && sourceId && (
@@ -188,10 +185,11 @@ export default function SluzkiBoard() {
             const midY = (start.y + end.y) / 2;
             return (
               <g key={edge.id} className="pointer-events-auto cursor-pointer group" onClick={(e) => { e.stopPropagation(); deleteEdge(edge.id); }}>
+                {/* Zona de click ampliada para la línea */}
                 <line x1={start.x} y1={start.y} x2={end.x} y2={end.y} stroke="transparent" strokeWidth="30" />
+                {/* Línea visible */}
                 <line x1={start.x} y1={start.y} x2={end.x} y2={end.y} stroke="#94a3b8" className="stroke-slate-600 stroke-[2px] transition-colors duration-300 group-hover:stroke-red-400 group-hover:stroke-[3px]" />
                 
-                {/* SI ESTAMOS EXPORTANDO, NO RENDERIZAMOS EL BOTÓN DE BORRAR */}
                 {!isExporting && (
                   <foreignObject x={midX - 12} y={midY - 12} width={24} height={24} className="overflow-visible pointer-events-none exclude-from-export">
                     <div className="w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all transform scale-125 md:scale-100">
