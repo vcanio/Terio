@@ -1,11 +1,14 @@
 import { useState, useRef, useCallback } from "react";
 import { toPng } from "html-to-image";
-import { useSluzkiStore } from "../store/useSluzkiStore"; // Asegúrate de importar el store
+import { useSluzkiStore } from "../store/useSluzkiStore";
+
+// TRUCO: Extraemos el tipo de 'Options' directamente de la función toPng
+// ya que la librería no lo exporta explícitamente.
+type ToPngOptions = Parameters<typeof toPng>[1];
 
 export const useSluzkiBoard = (diagramRef?: React.RefObject<HTMLDivElement | null>) => {
   const containerRef = useRef<HTMLDivElement>(null);
   
-  // 1. Consumimos el estado y las acciones del store de Zustand
   const { 
     nodes, edges, centerName, 
     setCenterName, addNode, deleteNode, 
@@ -13,33 +16,27 @@ export const useSluzkiBoard = (diagramRef?: React.RefObject<HTMLDivElement | nul
     addEdge, deleteEdge, clearBoard 
   } = useSluzkiStore();
 
-  // 2. Estado UI local (Mouse, exportación, conexiones visuales)
   const [isExporting, setIsExporting] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [sourceId, setSourceId] = useState<string | null>(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
-  // 3. Lógica de UI que se mantiene local en el hook
-  
-  // Actualizar posición al arrastrar (delegando al store)
   const onNodeDrag = (id: string, x: number, y: number) => {
     updateNodePosition(id, x, y);
   };
 
-  // Manejar clics para conectar nodos
   const handleNodeClick = (id: string) => {
     if (!isConnecting) return;
     if (sourceId === null) {
       setSourceId(id);
     } else {
       if (sourceId !== id) {
-        addEdge(sourceId, id); // Delegamos la creación de la conexión al store
+        addEdge(sourceId, id);
       }
       setSourceId(null);
     }
   };
 
-  // Rastrear el mouse para la línea punteada temporal
   const handleMouseMove = (e: React.MouseEvent) => {
     if (isConnecting && sourceId && containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect();
@@ -52,33 +49,32 @@ export const useSluzkiBoard = (diagramRef?: React.RefObject<HTMLDivElement | nul
     }
   };
 
-  // Obtener posición exacta de un nodo (para dibujar las líneas)
   const getNodePos = (id: string) => {
     if (id === "center") return { x: 0, y: 0 };
     const n = nodes.find((x) => x.id === id);
     return n ? { x: n.x, y: n.y } : { x: 0, y: 0 };
   };
 
-  // Lógica de exportación a imagen
   const downloadImage = useCallback(async () => {
     if (containerRef.current === null) return;
     
-    // Preparar estado (ocultar UI no deseada)
     setSourceId(null);
     setIsConnecting(false);
     setIsExporting(true);
 
-    // Esperar renderizado
     await new Promise((resolve) => setTimeout(resolve, 300));
 
     try {
-      let options: any = {
+      // Usamos el tipo extraído aquí
+      let options: ToPngOptions = {
         cacheBust: true,
         pixelRatio: 2, 
         backgroundColor: "#f8fafc",
-        filter: (node: any) => {
-          if (node?.classList?.contains) {
-             return !node.classList.contains("exclude-from-export");
+        // Tipamos el nodo como 'any' para evitar conflictos con la librería, 
+        // pero validamos que sea un Elemento HTML antes de acceder a classList
+        filter: (node: Node) => {
+          if (node instanceof Element && node.classList.contains("exclude-from-export")) {
+            return false;
           }
           return true;
         },
@@ -120,12 +116,12 @@ export const useSluzkiBoard = (diagramRef?: React.RefObject<HTMLDivElement | nul
   return {
     containerRef, nodes, edges, centerName, setCenterName,
     isConnecting, setIsConnecting, sourceId, setSourceId, mousePos,
-    isLoaded: true, // Zustand carga síncronamente el storage por defecto
+    isLoaded: true,
     addNode, deleteNode, clearBoard, deleteEdge,
     updateNodeName, onNodeDrag, handleNodeClick, 
-    handleMouseMove, // <--- Ahora sí está definida
-    getNodePos,      // <--- Ahora sí está definida
-    downloadImage,   // <--- Ahora sí está definida
+    handleMouseMove,
+    getNodePos,
+    downloadImage,
     isExporting, 
   };
 };

@@ -3,12 +3,26 @@
 import { useState } from 'react';
 import { Sidebar } from './Sidebar';
 import { PanelLeftOpen } from 'lucide-react';
+import { Toaster } from 'react-hot-toast'; // Importar Toaster
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   return (
     <div className="flex h-screen w-screen relative overflow-hidden bg-slate-50">
+      {/* Configuración global de las notificaciones */}
+      <Toaster 
+        position="bottom-right"
+        toastOptions={{
+          className: 'exclude-from-export', // ¡Importante! Para que no salgan en la foto
+          style: {
+            background: '#334155',
+            color: '#fff',
+            borderRadius: '10px',
+          },
+        }} 
+      />
+
       <Sidebar 
         isOpen={isSidebarOpen} 
         toggle={() => setIsSidebarOpen(!isSidebarOpen)} 

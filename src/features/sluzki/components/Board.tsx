@@ -1,15 +1,13 @@
 "use client";
 
 import React, { useState, useRef } from "react";
-import { Plus, Link as LinkIcon, Download, Info, ChevronRight, List, Trash2, User, X, RotateCcw, Target, BookOpen } from "lucide-react";
+import { Plus, Link as LinkIcon, Download, Info, ChevronRight, List, Trash2, User, X, RotateCcw, BookOpen } from "lucide-react";
 import { useSluzkiBoard } from "@/features/sluzki/hooks/useSluzkiBoard";
 import { DraggableNode } from "@/features/sluzki/components/DraggableNode";
-import { Modal } from "@/components/ui/Modal";
+import { AddNodeModal } from "@/features/sluzki/components/AddNodeModal"; // Importamos el nuevo modal
 import { THEME, LEVELS } from "@/features/sluzki/utils/constants";
-import { NodeType, NetworkLevel } from "@/features/sluzki/types";
 
 export default function SluzkiBoard() {
-  // Referencia para el área cuadrada del diagrama
   const diagramRef = useRef<HTMLDivElement>(null);
 
   const {
@@ -21,19 +19,9 @@ export default function SluzkiBoard() {
   } = useSluzkiBoard(diagramRef);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isListOpen, setIsListOpen] = useState(false); // Sidebar lateral editable
-  const [showLegend, setShowLegend] = useState(true); // Leyenda visual para exportar
+  const [isListOpen, setIsListOpen] = useState(false);
+  const [showLegend, setShowLegend] = useState(true);
   
-  const [modalName, setModalName] = useState("");
-  const [modalType, setModalType] = useState<NodeType>("family");
-  const [modalLevel, setModalLevel] = useState<NetworkLevel>(1);
-
-  const handleAddSubmit = () => {
-    addNode(modalName, modalType, modalLevel);
-    setModalName("");
-    setIsModalOpen(false);
-  };
-
   const sourcePos = sourceId ? getNodePos(sourceId) : { x: 0, y: 0 };
 
   if (!isLoaded) return <div className="w-full h-full bg-slate-50 flex items-center justify-center text-slate-400">Cargando mapa...</div>;
@@ -47,7 +35,7 @@ export default function SluzkiBoard() {
         ${isConnecting ? "cursor-crosshair" : ""}
       `}
     >
-      {/* BARRA DE HERRAMIENTAS */}
+      {/* ... (BARRA DE HERRAMIENTAS - Se mantiene igual) ... */}
       <div className="exclude-from-export absolute z-50 bottom-6 left-1/2 -translate-x-1/2 flex-row gap-4 lg:left-4 lg:top-1/2 lg:bottom-auto lg:-translate-y-1/2 lg:translate-x-0 lg:flex-col lg:gap-2 pointer-events-none transition-all duration-300">
         <div className="bg-white/95 backdrop-blur-sm p-2 rounded-2xl shadow-xl border border-slate-200 pointer-events-auto flex flex-row gap-3 items-center lg:flex-col lg:gap-2">
           
@@ -57,7 +45,6 @@ export default function SluzkiBoard() {
           
           <button onClick={() => { setIsConnecting(!isConnecting); setSourceId(null); }} className={`p-3 rounded-xl transition-all border ${isConnecting ? "bg-blue-600 border-blue-600 text-white shadow-md animate-pulse" : "bg-white border-transparent text-slate-500 hover:bg-slate-50"}`} title="Conectar"><LinkIcon size={22} /></button>
           
-          {/* Botón para mostrar/ocultar leyenda */}
           <button onClick={() => setShowLegend(!showLegend)} className={`p-3 rounded-xl transition-all border ${showLegend ? "bg-slate-100 text-slate-900" : "bg-white border-transparent text-slate-500 hover:bg-slate-50"}`} title="Ver Leyenda"><BookOpen size={22} /></button>
 
           <button onClick={downloadImage} disabled={isExporting} className="p-3 bg-white border border-transparent text-slate-500 rounded-xl hover:bg-slate-50 transition-all active:scale-95 disabled:opacity-50" title="Descargar"><Download size={22} /></button>
@@ -68,37 +55,20 @@ export default function SluzkiBoard() {
         </div>
       </div>
 
-      {/* CUADRO DE LEYENDA - ACTUALIZADO: CENTRADO VERTICALMENTE A LA DERECHA */}
+      {/* ... (LEYENDA - Se mantiene igual) ... */}
       {showLegend && nodes.length > 0 && (
         <div className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-64 bg-white/95 backdrop-blur-sm shadow-xl rounded-2xl border border-slate-200 p-4 pointer-events-none sm:pointer-events-auto transition-all animate-in fade-in zoom-in-95 duration-200">
-          
-          {/* Cabecera de la Leyenda */}
           <div className="flex items-center gap-2 mb-3 pb-2 border-b border-slate-100">
             <BookOpen size={16} className="text-blue-500" />
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-              Leyenda
-            </h3>
+            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Referencias</h3>
           </div>
-
-          {/* Lista de Nodos - Altura optimizada */}
           <ul className="space-y-2 max-h-[60vh] overflow-y-auto pr-1 custom-scrollbar">
             {nodes.map((node, index) => {
               const style = THEME[node.type];
               return (
                 <li key={node.id} className="flex items-start gap-3">
-                  {/* Badge */}
-                  <span className={`
-                    shrink-0 w-6 h-6 flex items-center justify-center 
-                    rounded-full text-[10px] font-bold border shadow-sm
-                    ${style.bg} ${style.border} ${style.text}
-                  `}>
-                    {index + 1}
-                  </span>
-                  
-                  {/* Nombre */}
-                  <span className="text-sm font-medium text-slate-700 leading-snug pt-0.5 wrap-break-word w-full">
-                    {node.name}
-                  </span>
+                  <span className={`shrink-0 w-6 h-6 flex items-center justify-center rounded-full text-[10px] font-bold border shadow-sm ${style.bg} ${style.border} ${style.text}`}>{index + 1}</span>
+                  <span className="text-sm font-medium text-slate-700 leading-snug pt-0.5 wrap-break-word w-full">{node.name}</span>
                 </li>
               );
             })}
@@ -106,7 +76,7 @@ export default function SluzkiBoard() {
         </div>
       )}
 
-      {/* SIDEBAR EDITABLE (Derecha - Fuera de la exportación) */}
+      {/* ... (SIDEBAR EDITABLE - Se mantiene igual, solo asegúrate de que use las props correctas) ... */}
       <div id="sluzki-sidebar" className={`exclude-from-export absolute z-40 right-0 top-0 bottom-0 w-full sm:w-80 md:w-96 bg-white/95 backdrop-blur border-l border-slate-200 shadow-2xl transition-transform duration-300 ease-in-out flex flex-col ${isListOpen ? 'translate-x-0' : 'translate-x-full'}`}>
         <button onClick={() => setIsListOpen(!isListOpen)} className="absolute -left-10 top-20 p-2.5 bg-white border border-slate-200 rounded-l-xl shadow-sm text-slate-500 hover:text-slate-900 z-50 flex items-center justify-center">
             {isListOpen ? <ChevronRight size={20} /> : <List size={20} />}
@@ -143,7 +113,7 @@ export default function SluzkiBoard() {
         </div>
       </div>
 
-      {/* FONDO (CÍRCULOS DE NIVELES) */}
+      {/* ... (FONDO Y LÍNEAS - Se mantienen igual) ... */}
       <div 
         ref={diagramRef}
         className="pointer-events-none absolute w-full max-w-[95vmin] aspect-square flex items-center justify-center opacity-50"
@@ -156,23 +126,17 @@ export default function SluzkiBoard() {
         </div>
         
         <svg className="absolute inset-0 w-full h-full z-0 overflow-visible" viewBox="0 0 1000 1000">
-          {/* Ejes */}
           <line x1="0" y1="500" x2="1000" y2="500" stroke="#475569" strokeWidth="2" strokeDasharray="8 8" />
           <line x1="500" y1="0" x2="500" y2="1000" stroke="#475569" strokeWidth="2" strokeDasharray="8 8" />
-          
-          {/* Círculos concéntricos */}
           <circle cx="500" cy="500" r={LEVELS[1].boundary} fill="none" stroke="#475569" strokeWidth="2" />
           <text x="505" y={500 - LEVELS[1].boundary + 20} className="fill-slate-400 text-[10px] font-bold uppercase">Nivel 1</text>
-          
           <circle cx="500" cy="500" r={LEVELS[2].boundary} fill="none" stroke="#475569" strokeWidth="2" />
           <text x="505" y={500 - LEVELS[2].boundary + 20} className="fill-slate-400 text-[10px] font-bold uppercase">Nivel 2</text>
-
           <circle cx="500" cy="500" r={LEVELS[3].boundary} fill="none" stroke="#475569" strokeWidth="2" />
           <text x="505" y={500 - LEVELS[3].boundary + 20} className="fill-slate-400 text-[10px] font-bold uppercase">Nivel 3</text>
         </svg>
       </div>
 
-      {/* ÁREA DE JUEGO (NODOS Y LÍNEAS) */}
       <div className="absolute top-1/2 left-1/2 w-0 h-0 z-10 overflow-visible">
         <svg className="absolute overflow-visible -top-[9999px] -left-[9999px] w-[19999px] h-[19999px] pointer-events-none" style={{ left: 0, top: 0 }}>
           {isConnecting && sourceId && (
@@ -185,9 +149,7 @@ export default function SluzkiBoard() {
             const midY = (start.y + end.y) / 2;
             return (
               <g key={edge.id} className="pointer-events-auto cursor-pointer group" onClick={(e) => { e.stopPropagation(); deleteEdge(edge.id); }}>
-                {/* Zona de click ampliada para la línea */}
                 <line x1={start.x} y1={start.y} x2={end.x} y2={end.y} stroke="transparent" strokeWidth="30" />
-                {/* Línea visible */}
                 <line x1={start.x} y1={start.y} x2={end.x} y2={end.y} stroke="#94a3b8" className="stroke-slate-600 stroke-[2px] transition-colors duration-300 group-hover:stroke-red-400 group-hover:stroke-[3px]" />
                 
                 {!isExporting && (
@@ -202,7 +164,6 @@ export default function SluzkiBoard() {
           })}
         </svg>
 
-        {/* NODO CENTRAL */}
         <div onClick={() => handleNodeClick("center")} title={centerName} 
           className={`absolute -translate-x-1/2 -translate-y-1/2 z-30 
             w-20 h-20 md:w-24 md:h-24 rounded-full bg-slate-900 text-white flex flex-col items-center justify-center shadow-2xl cursor-pointer 
@@ -215,7 +176,15 @@ export default function SluzkiBoard() {
         </div>
 
         {nodes.map((node, index) => (
-          <DraggableNode key={node.id} node={node} displayNumber={index + 1} onDrag={onNodeDrag} onClick={() => handleNodeClick(node.id)} isTarget={isConnecting && sourceId === node.id} isSelected={sourceId === node.id} />
+          <DraggableNode 
+            key={node.id} 
+            node={node} 
+            displayNumber={index + 1} 
+            onDrag={onNodeDrag} 
+            onClick={() => handleNodeClick(node.id)} 
+            isTarget={isConnecting && sourceId === node.id} 
+            isSelected={sourceId === node.id} 
+          />
         ))}
       </div>
 
@@ -225,50 +194,12 @@ export default function SluzkiBoard() {
         </div>
       )}
 
-      {/* MODAL PARA AGREGAR */}
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Agregar a la Red">
-        <div className="space-y-5">
-          <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Nombre</label>
-            <input autoFocus type="text" value={modalName} onChange={(e) => setModalName(e.target.value)} placeholder="Ej: María Pérez" className="w-full bg-slate-50 border border-slate-200 text-slate-900 text-base rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" />
-          </div>
-          <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Cuadrante</label>
-            <div className="grid grid-cols-2 gap-2">
-              {Object.entries(THEME).map(([key, style]) => {
-                const isSelected = modalType === key;
-                const Icon = style.icon;
-                return (
-                  <button key={key} onClick={() => setModalType(key as NodeType)} className={`flex items-center gap-2 px-3 py-2.5 rounded-lg border transition-all text-left ${isSelected ? `${style.bg} ${style.border} ${style.text} ring-1 ring-offset-1 ring-transparent` : "bg-white border-slate-200 text-slate-500 hover:bg-slate-50"}`}>
-                    <Icon size={16} className={isSelected ? style.text : "opacity-70"} />
-                    <span className="text-xs font-bold">{style.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-          <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Nivel de Cercanía</label>
-            <div className="flex flex-col gap-2">
-              {[1, 2, 3].map((lvl) => {
-                const isSelected = modalLevel === lvl;
-                return (
-                  <button key={lvl} onClick={() => setModalLevel(lvl as NetworkLevel)} className={`flex items-center justify-between p-3 rounded-xl border transition-all ${isSelected ? "bg-slate-800 text-white border-slate-800 shadow-md" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
-                    <div className="flex items-center gap-3">
-                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${isSelected ? "bg-white text-slate-900" : "bg-slate-100 text-slate-500"}`}>{lvl}</div>
-                        <span className="text-xs font-bold uppercase">{LEVELS[lvl as NetworkLevel].label}</span>
-                    </div>
-                    {isSelected && <Target size={16} className="text-blue-400" />}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-          <button onClick={handleAddSubmit} disabled={!modalName.trim()} className={`w-full py-4 rounded-xl font-bold text-sm shadow-xl shadow-blue-900/5 mt-2 flex items-center justify-center gap-2 transition-all ${!modalName.trim() ? "bg-slate-100 text-slate-400 cursor-not-allowed" : "bg-slate-900 text-white hover:bg-slate-800 active:scale-95"}`}>
-            <Plus size={20} strokeWidth={2.5} /> Agregar al Mapa
-          </button>
-        </div>
-      </Modal>
+      {/* MODAL USANDO EL NUEVO COMPONENTE CONTROLADO POR HOOK FORM */}
+      <AddNodeModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSubmit={(data) => addNode(data.name, data.type, data.level)}
+      />
     </div>
   );
 }
