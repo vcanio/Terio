@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { toPng } from "html-to-image";
-import { NodeData, EdgeData, NodeType } from "../types";
+import { NodeData, EdgeData, NodeType, NetworkLevel } from "../types";
+import { LEVELS } from "../utils/constants";
 
 export const useSluzkiBoard = () => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -9,20 +10,19 @@ export const useSluzkiBoard = () => {
   const [centerName, setCenterName] = useState("Usuario");
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Estado de interacción
   const [isConnecting, setIsConnecting] = useState(false);
   const [sourceId, setSourceId] = useState<string | null>(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
-  // --- 1. PERSISTENCIA (Auto-guardado) ---
+  // Persistencia
   useEffect(() => {
     const savedData = localStorage.getItem("terio-sluzki-data");
     if (savedData) {
       try {
-        const { nodes: savedNodes, edges: savedEdges, centerName: savedCenter } = JSON.parse(savedData);
-        setNodes(savedNodes || []);
-        setEdges(savedEdges || []);
-        setCenterName(savedCenter || "Usuario");
+        const parsed = JSON.parse(savedData);
+        setNodes(parsed.nodes || []);
+        setEdges(parsed.edges || []);
+        setCenterName(parsed.centerName || "Usuario");
       } catch (e) {
         console.error("Error cargando datos", e);
       }
@@ -36,12 +36,17 @@ export const useSluzkiBoard = () => {
     }
   }, [nodes, edges, centerName, isLoaded]);
 
-  // --- ACCIONES DE NODOS ---
-  const addNode = (name: string, type: NodeType) => {
+  // Agregar Nodo con Nivel
+  const addNode = (name: string, type: NodeType, level: NetworkLevel) => {
     if (!name.trim()) return;
     const id = Date.now().toString();
-    const radius = 200;
     
+    // Calcular radio basado en nivel + variación aleatoria
+    const baseRadius = LEVELS[level].radius;
+    const variation = (Math.random() * 40) - 20; 
+    const radius = baseRadius + variation;
+    
+    // Calcular ángulo basado en tipo (cuadrante)
     let minAngle = 0, maxAngle = 0;
     switch (type) {
       case "family": minAngle = Math.PI; maxAngle = 1.5 * Math.PI; break;
@@ -52,7 +57,7 @@ export const useSluzkiBoard = () => {
     const angle = Math.random() * (maxAngle - minAngle) + minAngle;
 
     setNodes(prev => [...prev, {
-      id, name, type,
+      id, name, type, level,
       x: Math.cos(angle) * radius,
       y: Math.sin(angle) * radius,
     }]);
@@ -65,7 +70,7 @@ export const useSluzkiBoard = () => {
   };
 
   const clearBoard = () => {
-    if (window.confirm("¿Estás seguro de que quieres borrar todo el mapa?")) {
+    if (window.confirm("¿Borrar todo el mapa?")) {
       setNodes([]);
       setEdges([]);
       setCenterName("Usuario");
@@ -80,7 +85,6 @@ export const useSluzkiBoard = () => {
     setNodes((prev) => prev.map((n) => (n.id === id ? { ...n, x, y } : n)));
   };
 
-  // --- ACCIONES DE CONEXIÓN ---
   const handleNodeClick = (id: string) => {
     if (!isConnecting) return;
     if (sourceId === null) {
@@ -124,11 +128,8 @@ export const useSluzkiBoard = () => {
     return n ? { x: n.x, y: n.y } : { x: 0, y: 0 };
   };
 
-  // --- UTILIDADES ---
   const downloadImage = useCallback(() => {
     if (containerRef.current === null) return;
-    
-    // Desactivar selección temporalmente para la foto
     setSourceId(null);
     setIsConnecting(false);
 
@@ -143,52 +144,31 @@ export const useSluzkiBoard = () => {
         return true;
       },
       onClone: (clonedNode: HTMLElement) => {
-        // A. Forzar apertura del Sidebar
         const sidebar = clonedNode.querySelector("#sluzki-sidebar") as HTMLElement;
         if (sidebar) {
           sidebar.style.transform = "translateX(0)"; 
           sidebar.style.transition = "none"; 
         }
-
-        // B. Eliminar tachos de basura en SVG a la fuerza
         const garbageElements = clonedNode.querySelectorAll(".exclude-from-export");
         garbageElements.forEach((el) => {
           if (el instanceof HTMLElement || el instanceof SVGElement) {
             el.style.display = "none";
-            el.style.visibility = "hidden";
             el.innerHTML = ""; 
           }
         });
       }
-    } as any).then((dataUrl) => { // <--- AQUÍ ESTÁ EL CAMBIO: "as any"
+    } as any).then((dataUrl) => {
         const link = document.createElement("a");
         link.download = `mapa-sluzki-${new Date().toISOString().slice(0,10)}.png`;
         link.href = dataUrl;
         link.click();
-      }).catch((err) => console.error("Error al exportar imagen:", err));
+      }).catch((err) => console.error("Error al exportar:", err));
   }, [containerRef]);
 
   return {
-    containerRef,
-    nodes,
-    edges,
-    centerName,
-    setCenterName,
-    isConnecting,
-    setIsConnecting,
-    sourceId,
-    setSourceId,
-    mousePos,
-    isLoaded,
-    addNode,
-    deleteNode,
-    clearBoard,
-    deleteEdge,
-    updateNodeName,
-    onNodeDrag,
-    handleNodeClick,
-    handleMouseMove,
-    getNodePos,
-    downloadImage,
+    containerRef, nodes, edges, centerName, setCenterName,
+    isConnecting, setIsConnecting, sourceId, setSourceId, mousePos,
+    isLoaded, addNode, deleteNode, clearBoard, deleteEdge,
+    updateNodeName, onNodeDrag, handleNodeClick, handleMouseMove, getNodePos, downloadImage,
   };
 };
