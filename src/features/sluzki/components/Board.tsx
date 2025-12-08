@@ -46,17 +46,70 @@ export default function SluzkiBoard() {
         ${isConnecting ? "cursor-crosshair" : ""}
       `}
     >
-      {/* BARRA DE HERRAMIENTAS */}
-      <div className="exclude-from-export absolute z-50 bottom-6 left-1/2 -translate-x-1/2 flex-row gap-4 md:left-4 md:top-1/2 md:bottom-auto md:-translate-y-1/2 md:translate-x-0 md:flex-col md:gap-2 pointer-events-none transition-all duration-300">
-        <div className="bg-white/95 backdrop-blur-sm p-2 rounded-2xl shadow-xl border border-slate-200 pointer-events-auto flex flex-row gap-3 items-center md:flex-col md:gap-2">
-          <button onClick={() => setIsModalOpen(true)} className="p-3 bg-slate-900 text-white rounded-xl shadow-lg shadow-slate-900/20 hover:bg-slate-800 transition-all active:scale-95" title="Agregar Nodo"><Plus size={22} /></button>
-          <div className="w-px h-8 bg-slate-200 md:w-8 md:h-px"></div>
-          <button onClick={() => { setIsConnecting(!isConnecting); setSourceId(null); }} className={`p-3 rounded-xl transition-all border ${isConnecting ? "bg-blue-600 border-blue-600 text-white shadow-md animate-pulse" : "bg-white border-transparent text-slate-500 hover:bg-slate-50"}`} title="Conectar"><LinkIcon size={22} /></button>
-          <button onClick={downloadImage} disabled={isExporting} className="p-3 bg-white border border-transparent text-slate-500 rounded-xl hover:bg-slate-50 transition-all active:scale-95 disabled:opacity-50" title="Descargar"><Download size={22} /></button>
-          <div className="w-px h-8 bg-slate-200 md:w-8 md:h-px"></div>
-          <button onClick={clearBoard} className="p-3 bg-white border border-transparent text-red-400 rounded-xl hover:bg-red-50 hover:text-red-600 transition-all active:scale-95" title="Limpiar"><RotateCcw size={22} /></button>
+        {/* BARRA DE HERRAMIENTAS */}
+        <div 
+          className="
+            exclude-from-export absolute z-50 
+            bottom-6 left-1/2 -translate-x-1/2 
+            flex-row gap-4
+
+            lg:left-4 lg:top-1/2 lg:bottom-auto 
+            lg:-translate-y-1/2 lg:translate-x-0 
+            lg:flex-col lg:gap-2
+
+            pointer-events-none transition-all duration-300
+          "
+        >
+          <div className="bg-white/95 backdrop-blur-sm p-2 rounded-2xl shadow-xl border border-slate-200 pointer-events-auto flex flex-row gap-3 items-center lg:flex-col lg:gap-2">
+
+            {/* Agregar nodo */}
+            <button 
+              onClick={() => setIsModalOpen(true)}
+              className="p-3 bg-slate-900 text-white rounded-xl shadow-lg shadow-slate-900/20 hover:bg-slate-800 transition-all active:scale-95"
+              title="Agregar Nodo"
+            >
+              <Plus size={22} />
+            </button>
+
+            <div className="w-px h-8 bg-slate-200 lg:w-8 lg:h-px"></div>
+
+            {/* Conectar */}
+            <button 
+              onClick={() => { setIsConnecting(!isConnecting); setSourceId(null); }} 
+              className={`p-3 rounded-xl transition-all border ${
+                isConnecting 
+                  ? "bg-blue-600 border-blue-600 text-white shadow-md animate-pulse" 
+                  : "bg-white border-transparent text-slate-500 hover:bg-slate-50"
+              }`}
+              title="Conectar"
+            >
+              <LinkIcon size={22} />
+            </button>
+
+            {/* Descargar */}
+            <button 
+              onClick={downloadImage} 
+              disabled={isExporting}
+              className="p-3 bg-white border border-transparent text-slate-500 rounded-xl hover:bg-slate-50 transition-all active:scale-95 disabled:opacity-50"
+              title="Descargar"
+            >
+              <Download size={22} />
+            </button>
+
+            <div className="w-px h-8 bg-slate-200 lg:w-8 lg:h-px"></div>
+
+            {/* Limpiar */}
+            <button 
+              onClick={clearBoard}
+              className="p-3 bg-white border border-transparent text-red-400 rounded-xl hover:bg-red-50 hover:text-red-600 transition-all active:scale-95"
+              title="Limpiar"
+            >
+              <RotateCcw size={22} />
+            </button>
+
+          </div>
         </div>
-      </div>
+
 
       {/* SIDEBAR CON DETALLE NUMÉRICO */}
       <div id="sluzki-sidebar" className={`absolute z-40 right-0 top-0 bottom-0 w-full sm:w-80 md:w-96 bg-white/95 backdrop-blur border-l border-slate-200 shadow-2xl transition-transform duration-300 ease-in-out flex flex-col ${isListOpen ? 'translate-x-0' : 'translate-x-full'}`}>
