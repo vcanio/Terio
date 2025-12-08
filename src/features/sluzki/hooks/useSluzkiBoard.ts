@@ -3,12 +3,15 @@ import { toPng } from "html-to-image";
 import { NodeData, EdgeData, NodeType, NetworkLevel } from "../types";
 import { LEVELS } from "../utils/constants";
 
-export const useSluzkiBoard = () => {
+export const useSluzkiBoard = (diagramRef?: React.RefObject<HTMLDivElement | null>) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [nodes, setNodes] = useState<NodeData[]>([]);
   const [edges, setEdges] = useState<EdgeData[]>([]);
   const [centerName, setCenterName] = useState("Usuario");
   const [isLoaded, setIsLoaded] = useState(false);
+
+  // Estado para controlar la UI durante la exportación
+  const [isExporting, setIsExporting] = useState(false);
 
   const [isConnecting, setIsConnecting] = useState(false);
   const [sourceId, setSourceId] = useState<string | null>(null);
@@ -41,12 +44,10 @@ export const useSluzkiBoard = () => {
     if (!name.trim()) return;
     const id = Date.now().toString();
     
-    // Calcular radio basado en nivel + variación aleatoria
     const baseRadius = LEVELS[level].radius;
     const variation = (Math.random() * 40) - 20; 
     const radius = baseRadius + variation;
     
-    // Calcular ángulo basado en tipo (cuadrante)
     let minAngle = 0, maxAngle = 0;
     switch (type) {
       case "family": minAngle = Math.PI; maxAngle = 1.5 * Math.PI; break;
@@ -128,47 +129,77 @@ export const useSluzkiBoard = () => {
     return n ? { x: n.x, y: n.y } : { x: 0, y: 0 };
   };
 
-  const downloadImage = useCallback(() => {
+  const downloadImage = useCallback(async () => {
     if (containerRef.current === null) return;
+    
+    // 1. Preparar estado (ocultar UI no deseada)
     setSourceId(null);
     setIsConnecting(false);
+    setIsExporting(true);
 
-    toPng(containerRef.current, {
-      cacheBust: true,
-      pixelRatio: 2, 
-      backgroundColor: "#f8fafc",
-      filter: (node: any) => {
-        if (node?.classList?.contains) {
-           return !node.classList.contains("exclude-from-export");
-        }
-        return true;
-      },
-      onClone: (clonedNode: HTMLElement) => {
-        const sidebar = clonedNode.querySelector("#sluzki-sidebar") as HTMLElement;
-        if (sidebar) {
-          sidebar.style.transform = "translateX(0)"; 
-          sidebar.style.transition = "none"; 
-        }
-        const garbageElements = clonedNode.querySelectorAll(".exclude-from-export");
-        garbageElements.forEach((el) => {
-          if (el instanceof HTMLElement || el instanceof SVGElement) {
-            el.style.display = "none";
-            el.innerHTML = ""; 
+    // 2. Esperar renderizado de React (para quitar los iconos de basura)
+    await new Promise((resolve) => setTimeout(resolve, 300));
+
+    try {
+      // Definimos el tipo 'any' temporalmente en options para evitar conflictos de tipado estrictos
+      // aunque usamos las propiedades estándar soportadas.
+      let options: any = {
+        cacheBust: true,
+        pixelRatio: 2, 
+        backgroundColor: "#f8fafc",
+        filter: (node: any) => {
+          if (node?.classList?.contains) {
+             return !node.classList.contains("exclude-from-export");
           }
-        });
+          return true;
+        },
+      };
+
+      // 3. Lógica de Recorte con 'style' (SOLUCIÓN AL ERROR X/Y)
+      if (diagramRef?.current) {
+        const containerRect = containerRef.current.getBoundingClientRect();
+        const diagramRect = diagramRef.current.getBoundingClientRect();
+
+        // Calculamos cuánto hay que mover el contenido para que el diagrama quede en (0,0)
+        const cropX = diagramRect.left - containerRect.left;
+        const cropY = diagramRect.top - containerRect.top;
+
+        options = {
+          ...options,
+          // Definimos el tamaño del lienzo final igual al tamaño del diagrama (recorte)
+          width: diagramRect.width,
+          height: diagramRect.height,
+          // Usamos style para desplazar el contenedor original
+          style: {
+            transform: `translate(-${cropX}px, -${cropY}px)`,
+            transformOrigin: "top left",
+            // Forzamos que el contenedor mantenga su tamaño original para no romper el layout al moverlo
+            width: `${containerRect.width}px`,
+            height: `${containerRect.height}px`,
+          }
+        };
       }
-    } as any).then((dataUrl) => {
-        const link = document.createElement("a");
-        link.download = `mapa-sluzki-${new Date().toISOString().slice(0,10)}.png`;
-        link.href = dataUrl;
-        link.click();
-      }).catch((err) => console.error("Error al exportar:", err));
-  }, [containerRef]);
+
+      const dataUrl = await toPng(containerRef.current, options);
+
+      const link = document.createElement("a");
+      link.download = `mapa-sluzki-${new Date().toISOString().slice(0,10)}.png`;
+      link.href = dataUrl;
+      link.click();
+
+    } catch (err) {
+      console.error("Error al exportar:", err);
+    } finally {
+      // 4. Restaurar estado normal
+      setIsExporting(false);
+    }
+  }, [containerRef, diagramRef]);
 
   return {
     containerRef, nodes, edges, centerName, setCenterName,
     isConnecting, setIsConnecting, sourceId, setSourceId, mousePos,
     isLoaded, addNode, deleteNode, clearBoard, deleteEdge,
     updateNodeName, onNodeDrag, handleNodeClick, handleMouseMove, getNodePos, downloadImage,
+    isExporting, 
   };
 };

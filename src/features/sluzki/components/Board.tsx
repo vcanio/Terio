@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { Plus, Link as LinkIcon, Download, Info, ChevronRight, List, Trash2, User, Check, X, RotateCcw, Target } from "lucide-react";
 import { useSluzkiBoard } from "@/features/sluzki/hooks/useSluzkiBoard";
 import { DraggableNode } from "@/features/sluzki/components/DraggableNode";
@@ -9,13 +9,16 @@ import { THEME, LEVELS } from "@/features/sluzki/utils/constants";
 import { NodeType, NetworkLevel } from "@/features/sluzki/types";
 
 export default function SluzkiBoard() {
+  // Referencia para el área cuadrada del diagrama (para recortar)
+  const diagramRef = useRef<HTMLDivElement>(null);
+
   const {
     containerRef, nodes, edges, centerName, setCenterName,
     isConnecting, setIsConnecting, sourceId, setSourceId, mousePos,
     addNode, deleteNode, deleteEdge, updateNodeName, onNodeDrag, 
     handleNodeClick, handleMouseMove, getNodePos, downloadImage,
-    isLoaded, clearBoard
-  } = useSluzkiBoard();
+    isLoaded, clearBoard, isExporting 
+  } = useSluzkiBoard(diagramRef);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isListOpen, setIsListOpen] = useState(false);
@@ -49,7 +52,7 @@ export default function SluzkiBoard() {
           <button onClick={() => setIsModalOpen(true)} className="p-3 bg-slate-900 text-white rounded-xl shadow-lg shadow-slate-900/20 hover:bg-slate-800 transition-all active:scale-95" title="Agregar Nodo"><Plus size={22} /></button>
           <div className="w-px h-8 bg-slate-200 md:w-8 md:h-px"></div>
           <button onClick={() => { setIsConnecting(!isConnecting); setSourceId(null); }} className={`p-3 rounded-xl transition-all border ${isConnecting ? "bg-blue-600 border-blue-600 text-white shadow-md animate-pulse" : "bg-white border-transparent text-slate-500 hover:bg-slate-50"}`} title="Conectar"><LinkIcon size={22} /></button>
-          <button onClick={downloadImage} className="p-3 bg-white border border-transparent text-slate-500 rounded-xl hover:bg-slate-50 transition-all active:scale-95" title="Descargar"><Download size={22} /></button>
+          <button onClick={downloadImage} disabled={isExporting} className="p-3 bg-white border border-transparent text-slate-500 rounded-xl hover:bg-slate-50 transition-all active:scale-95 disabled:opacity-50" title="Descargar"><Download size={22} /></button>
           <div className="w-px h-8 bg-slate-200 md:w-8 md:h-px"></div>
           <button onClick={clearBoard} className="p-3 bg-white border border-transparent text-red-400 rounded-xl hover:bg-red-50 hover:text-red-600 transition-all active:scale-95" title="Limpiar"><RotateCcw size={22} /></button>
         </div>
@@ -67,12 +70,12 @@ export default function SluzkiBoard() {
         </div>
         
         <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 m-3 shadow-sm">
-          <div className="text-[10px] uppercase font-bold text-slate-400 mb-2 flex items-center gap-1"><User size={10} /> Usuario Principal</div>
+          <div className="text-[10px] uppercase font-bold text-slate-400 mb-2 flex items-center gap-1"><User size={10} /> Usuario </div>
           <input type="text" value={centerName} onChange={(e) => setCenterName(e.target.value)} className="w-full text-base font-bold bg-transparent border-b border-slate-300 focus:border-blue-500 p-1 focus:outline-none text-slate-800" placeholder="Nombre..." />
         </div>
 
         <div className="flex-1 overflow-y-auto p-3 space-y-2.5">
-          {nodes.length === 0 && <div className="text-center text-slate-400 text-sm py-10 opacity-60">Sin integrantes.</div>}
+          {nodes.length === 0 && <div className="text-center text-slate-400 text-sm py-10 opacity-60">Sin Nodos.</div>}
           {nodes.map((node, index) => {
             const style = THEME[node.type];
             return (
@@ -93,9 +96,11 @@ export default function SluzkiBoard() {
       </div>
 
       {/* FONDO (CÍRCULOS DE NIVELES) */}
-      <div className="pointer-events-none absolute w-full max-w-[95vmin] aspect-square flex items-center justify-center opacity-50">
+      <div 
+        ref={diagramRef}
+        className="pointer-events-none absolute w-full max-w-[95vmin] aspect-square flex items-center justify-center opacity-50"
+      >
         <div className="absolute inset-0 z-0 font-black uppercase tracking-widest select-none">
-            {/* ... Etiquetas de texto ... */}
             <span className="absolute top-6 left-6 text-sm md:text-2xl text-emerald-900/80">Familia</span>
             <span className="absolute top-6 right-6 text-sm md:text-2xl text-amber-900/80 text-right">Amigos</span>
             <span className="absolute bottom-6 left-6 text-sm md:text-2xl text-blue-900/80">Laboral</span>
@@ -103,22 +108,15 @@ export default function SluzkiBoard() {
         </div>
         
         <svg className="absolute inset-0 w-full h-full z-0 overflow-visible" viewBox="0 0 1000 1000">
-          {/* Líneas divisorias */}
           <line x1="0" y1="500" x2="1000" y2="500" stroke="#475569" strokeWidth="2" strokeDasharray="8 8" />
           <line x1="500" y1="0" x2="500" y2="1000" stroke="#475569" strokeWidth="2" strokeDasharray="8 8" />
           
-          {/* Círculos de Niveles usando BOUNDARY en lugar de RADIUS */}
-          
-          {/* Límite Nivel 1 */}
           <circle cx="500" cy="500" r={LEVELS[1].boundary} fill="none" stroke="#475569" strokeWidth="2" />
-          {/* Texto ajustado para quedar dentro de su zona */}
           <text x="505" y={500 - LEVELS[1].boundary + 20} className="fill-slate-400 text-[10px] font-bold uppercase">Nivel 1</text>
           
-          {/* Límite Nivel 2 */}
           <circle cx="500" cy="500" r={LEVELS[2].boundary} fill="none" stroke="#475569" strokeWidth="2" />
           <text x="505" y={500 - LEVELS[2].boundary + 20} className="fill-slate-400 text-[10px] font-bold uppercase">Nivel 2</text>
 
-          {/* Límite Nivel 3 */}
           <circle cx="500" cy="500" r={LEVELS[3].boundary} fill="none" stroke="#475569" strokeWidth="2" />
           <text x="505" y={500 - LEVELS[3].boundary + 20} className="fill-slate-400 text-[10px] font-bold uppercase">Nivel 3</text>
         </svg>
@@ -138,18 +136,22 @@ export default function SluzkiBoard() {
             return (
               <g key={edge.id} className="pointer-events-auto cursor-pointer group" onClick={(e) => { e.stopPropagation(); deleteEdge(edge.id); }}>
                 <line x1={start.x} y1={start.y} x2={end.x} y2={end.y} stroke="transparent" strokeWidth="30" />
-                <line x1={start.x} y1={start.y} x2={end.x} y2={end.y} stroke="#94a3b8" className="stroke-slate-400 stroke-[2px] transition-colors duration-300 group-hover:stroke-red-400 group-hover:stroke-[3px]" />
-                <foreignObject x={midX - 12} y={midY - 12} width={24} height={24} className="overflow-visible pointer-events-none exclude-from-export">
-                  <div className="w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all transform scale-125 md:scale-100">
-                    <div className="bg-white text-red-500 rounded-full shadow-md border border-red-100 p-1 hover:bg-red-50"><Trash2 size={12} /></div>
-                  </div>
-                </foreignObject>
+                <line x1={start.x} y1={start.y} x2={end.x} y2={end.y} stroke="#94a3b8" className="stroke-slate-600 stroke-[2px] transition-colors duration-300 group-hover:stroke-red-400 group-hover:stroke-[3px]" />
+                
+                {/* SI ESTAMOS EXPORTANDO, NO RENDERIZAMOS EL BOTÓN DE BORRAR */}
+                {!isExporting && (
+                  <foreignObject x={midX - 12} y={midY - 12} width={24} height={24} className="overflow-visible pointer-events-none exclude-from-export">
+                    <div className="w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all transform scale-125 md:scale-100">
+                      <div className="bg-white text-red-500 rounded-full shadow-md border border-red-100 p-1 hover:bg-red-50"><Trash2 size={12} /></div>
+                    </div>
+                  </foreignObject>
+                )}
               </g>
             );
           })}
         </svg>
 
-        {/* NODO CENTRAL: Círculo grande con Nombre */}
+        {/* NODO CENTRAL */}
         <div onClick={() => handleNodeClick("center")} title={centerName} 
           className={`absolute -translate-x-1/2 -translate-y-1/2 z-30 
             w-20 h-20 md:w-24 md:h-24 rounded-full bg-slate-900 text-white flex flex-col items-center justify-center shadow-2xl cursor-pointer 
