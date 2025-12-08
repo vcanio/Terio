@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react"; // Agregamos useEffect
 import { toPng } from "html-to-image";
 import { NodeData, EdgeData, NodeType } from "../types";
 
@@ -7,11 +7,36 @@ export const useSluzkiBoard = () => {
   const [nodes, setNodes] = useState<NodeData[]>([]);
   const [edges, setEdges] = useState<EdgeData[]>([]);
   const [centerName, setCenterName] = useState("Usuario");
-  
+  const [isLoaded, setIsLoaded] = useState(false); // Para evitar flash de contenido vacío
+
   // Estado de interacción
   const [isConnecting, setIsConnecting] = useState(false);
   const [sourceId, setSourceId] = useState<string | null>(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+
+  // --- 1. PERSISTENCIA (Auto-guardado) ---
+  // Cargar datos al montar
+  useEffect(() => {
+    const savedData = localStorage.getItem("terio-sluzki-data");
+    if (savedData) {
+      try {
+        const { nodes: savedNodes, edges: savedEdges, centerName: savedCenter } = JSON.parse(savedData);
+        setNodes(savedNodes || []);
+        setEdges(savedEdges || []);
+        setCenterName(savedCenter || "Usuario");
+      } catch (e) {
+        console.error("Error cargando datos", e);
+      }
+    }
+    setIsLoaded(true);
+  }, []);
+
+  // Guardar datos al cambiar
+  useEffect(() => {
+    if (isLoaded) {
+      localStorage.setItem("terio-sluzki-data", JSON.stringify({ nodes, edges, centerName }));
+    }
+  }, [nodes, edges, centerName, isLoaded]);
 
   // --- ACCIONES DE NODOS ---
   const addNode = (name: string, type: NodeType) => {
@@ -39,6 +64,14 @@ export const useSluzkiBoard = () => {
     setNodes(prev => prev.filter((n) => n.id !== id));
     setEdges(prev => prev.filter((e) => e.from !== id && e.to !== id));
     if (sourceId === id) setSourceId(null);
+  };
+
+  const clearBoard = () => {
+    if (window.confirm("¿Estás seguro de que quieres borrar todo el mapa?")) {
+      setNodes([]);
+      setEdges([]);
+      setCenterName("Usuario");
+    }
   };
 
   const updateNodeName = (id: string, newName: string) => {
@@ -102,7 +135,7 @@ export const useSluzkiBoard = () => {
       backgroundColor: "#f8fafc",
     }).then((dataUrl) => {
         const link = document.createElement("a");
-        link.download = "mapa-sluzki.png";
+        link.download = `mapa-sluzki-${new Date().toISOString().slice(0,10)}.png`; // Nombre con fecha
         link.href = dataUrl;
         link.click();
       }).catch((err) => console.error(err));
@@ -119,9 +152,11 @@ export const useSluzkiBoard = () => {
     sourceId,
     setSourceId,
     mousePos,
+    isLoaded, // Exportamos estado de carga
     // Acciones y Getters
     addNode,
     deleteNode,
+    clearBoard, // Nueva acción
     deleteEdge,
     updateNodeName,
     onNodeDrag,
