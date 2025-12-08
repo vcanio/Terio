@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from "react"; // Agregamos useEffect
+import { useState, useRef, useCallback, useEffect } from "react";
 import { toPng } from "html-to-image";
 import { NodeData, EdgeData, NodeType } from "../types";
 
@@ -7,7 +7,7 @@ export const useSluzkiBoard = () => {
   const [nodes, setNodes] = useState<NodeData[]>([]);
   const [edges, setEdges] = useState<EdgeData[]>([]);
   const [centerName, setCenterName] = useState("Usuario");
-  const [isLoaded, setIsLoaded] = useState(false); // Para evitar flash de contenido vacío
+  const [isLoaded, setIsLoaded] = useState(false);
 
   // Estado de interacción
   const [isConnecting, setIsConnecting] = useState(false);
@@ -15,7 +15,6 @@ export const useSluzkiBoard = () => {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
   // --- 1. PERSISTENCIA (Auto-guardado) ---
-  // Cargar datos al montar
   useEffect(() => {
     const savedData = localStorage.getItem("terio-sluzki-data");
     if (savedData) {
@@ -31,7 +30,6 @@ export const useSluzkiBoard = () => {
     setIsLoaded(true);
   }, []);
 
-  // Guardar datos al cambiar
   useEffect(() => {
     if (isLoaded) {
       localStorage.setItem("terio-sluzki-data", JSON.stringify({ nodes, edges, centerName }));
@@ -129,16 +127,45 @@ export const useSluzkiBoard = () => {
   // --- UTILIDADES ---
   const downloadImage = useCallback(() => {
     if (containerRef.current === null) return;
+    
+    // Desactivar selección temporalmente para la foto
+    setSourceId(null);
+    setIsConnecting(false);
+
     toPng(containerRef.current, {
       cacheBust: true,
-      filter: (node) => !node.classList?.contains("exclude-from-export"),
+      pixelRatio: 2, 
       backgroundColor: "#f8fafc",
-    }).then((dataUrl) => {
+      filter: (node: any) => {
+        if (node?.classList?.contains) {
+           return !node.classList.contains("exclude-from-export");
+        }
+        return true;
+      },
+      onClone: (clonedNode: HTMLElement) => {
+        // A. Forzar apertura del Sidebar
+        const sidebar = clonedNode.querySelector("#sluzki-sidebar") as HTMLElement;
+        if (sidebar) {
+          sidebar.style.transform = "translateX(0)"; 
+          sidebar.style.transition = "none"; 
+        }
+
+        // B. Eliminar tachos de basura en SVG a la fuerza
+        const garbageElements = clonedNode.querySelectorAll(".exclude-from-export");
+        garbageElements.forEach((el) => {
+          if (el instanceof HTMLElement || el instanceof SVGElement) {
+            el.style.display = "none";
+            el.style.visibility = "hidden";
+            el.innerHTML = ""; 
+          }
+        });
+      }
+    } as any).then((dataUrl) => { // <--- AQUÍ ESTÁ EL CAMBIO: "as any"
         const link = document.createElement("a");
-        link.download = `mapa-sluzki-${new Date().toISOString().slice(0,10)}.png`; // Nombre con fecha
+        link.download = `mapa-sluzki-${new Date().toISOString().slice(0,10)}.png`;
         link.href = dataUrl;
         link.click();
-      }).catch((err) => console.error(err));
+      }).catch((err) => console.error("Error al exportar imagen:", err));
   }, [containerRef]);
 
   return {
@@ -152,11 +179,10 @@ export const useSluzkiBoard = () => {
     sourceId,
     setSourceId,
     mousePos,
-    isLoaded, // Exportamos estado de carga
-    // Acciones y Getters
+    isLoaded,
     addNode,
     deleteNode,
-    clearBoard, // Nueva acción
+    clearBoard,
     deleteEdge,
     updateNodeName,
     onNodeDrag,

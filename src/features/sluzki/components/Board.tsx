@@ -45,7 +45,7 @@ export default function SluzkiBoard() {
         ${isConnecting ? "cursor-crosshair" : ""}
       `}
     >
-      {/* --- BARRA DE HERRAMIENTAS MEJORADA --- */}
+      {/* --- BARRA DE HERRAMIENTAS (Se excluye de la foto) --- */}
       <div className="exclude-from-export absolute z-50 
         bottom-6 left-1/2 -translate-x-1/2 flex-row gap-4
         md:left-4 md:top-1/2 md:bottom-auto md:-translate-y-1/2 md:translate-x-0 md:flex-col md:gap-2
@@ -96,15 +96,23 @@ export default function SluzkiBoard() {
         </div>
       </div>
 
-      {/* --- SIDEBAR (Igual que antes) --- */}
-      <div className={`exclude-from-export absolute z-40 right-0 top-0 bottom-0 w-full sm:w-80 md:w-96 bg-white/95 backdrop-blur border-l border-slate-200 shadow-2xl transition-transform duration-300 ease-in-out flex flex-col ${isListOpen ? 'translate-x-0' : 'translate-x-full'}`}>
-        <button onClick={() => setIsListOpen(!isListOpen)} className="absolute -left-10 top-4 p-2.5 bg-white border border-slate-200 rounded-l-xl shadow-sm text-slate-500 hover:text-slate-900 z-50 flex items-center justify-center">
+      {/* --- SIDEBAR / LISTADO DE NODOS --- */}
+      {/* IMPORTANTE: id="sluzki-sidebar" permite que el hook lo encuentre para abrirlo en la foto */}
+      <div 
+        id="sluzki-sidebar"
+        className={`absolute z-40 right-0 top-0 bottom-0 w-full sm:w-80 md:w-96 bg-white/95 backdrop-blur border-l border-slate-200 shadow-2xl transition-transform duration-300 ease-in-out flex flex-col ${isListOpen ? 'translate-x-0' : 'translate-x-full'}`}
+      >
+        {/* El botón toggle se excluye de la exportación */}
+        <button onClick={() => setIsListOpen(!isListOpen)} className="exclude-from-export absolute -left-10 top-4 p-2.5 bg-white border border-slate-200 rounded-l-xl shadow-sm text-slate-500 hover:text-slate-900 z-50 flex items-center justify-center">
             {isListOpen ? <ChevronRight size={20} /> : <List size={20} />}
         </button>
+
         <div className="flex justify-between items-center p-4 border-b border-slate-100">
             <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2"><List size={16} /> Red de Apoyo ({nodes.length})</h2>
-            <button onClick={() => setIsListOpen(false)} className="md:hidden p-1 text-slate-400"><X size={20}/></button>
+            {/* El botón cerrar móvil se excluye de la exportación */}
+            <button onClick={() => setIsListOpen(false)} className="exclude-from-export md:hidden p-1 text-slate-400"><X size={20}/></button>
         </div>
+        
         <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 m-3 shadow-sm">
           <div className="text-[10px] uppercase font-bold text-slate-400 mb-2 flex items-center gap-1"><User size={10} /> Usuario Principal</div>
           <div className="flex items-center gap-3">
@@ -112,6 +120,7 @@ export default function SluzkiBoard() {
             <input type="text" value={centerName} onChange={(e) => setCenterName(e.target.value)} className="w-full text-base font-bold bg-transparent border-b border-slate-300 focus:border-blue-500 p-1 focus:outline-none transition-colors text-slate-800" placeholder="Nombre..." />
           </div>
         </div>
+
         <div className="flex-1 overflow-y-auto p-3 space-y-2.5">
           {nodes.length === 0 && <div className="text-center text-slate-400 text-sm py-10 opacity-60">Sin nodos aún.</div>}
           {nodes.map((node) => {
@@ -123,14 +132,15 @@ export default function SluzkiBoard() {
                   <div className="text-[10px] uppercase font-bold text-slate-400 flex items-center gap-1 mb-0.5"><style.icon size={10} /> {style.label}</div>
                   <input type="text" value={node.name} onChange={(e) => updateNodeName(node.id, e.target.value)} className="w-full text-sm font-medium bg-transparent border-none p-0 focus:ring-0 text-slate-700 placeholder:text-slate-300" />
                 </div>
-                <button onClick={() => deleteNode(node.id)} className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"><Trash2 size={16} /></button>
+                {/* Botón borrar nodo se excluye de la exportación */}
+                <button onClick={() => deleteNode(node.id)} className="exclude-from-export p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"><Trash2 size={16} /></button>
               </div>
             );
           })}
         </div>
       </div>
 
-      {/* --- FONDO (Igual que antes) --- */}
+      {/* --- FONDO --- */}
       <div className="pointer-events-none absolute w-full max-w-[95vmin] aspect-square flex items-center justify-center opacity-50">
         <div className="absolute inset-0 z-0 font-black uppercase tracking-widest select-none">
             <span className="absolute top-6 left-6 text-sm md:text-3xl text-emerald-900/40">Familia</span>
@@ -147,7 +157,7 @@ export default function SluzkiBoard() {
         </svg>
       </div>
 
-      {/* --- EMPTY STATE (NUEVO: Guía visual si no hay nodos) --- */}
+      {/* --- EMPTY STATE --- */}
       {nodes.length === 0 && (
         <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 mt-24 text-center opacity-40 animate-in fade-in zoom-in duration-700">
             <MousePointerClick className="w-12 h-12 mx-auto mb-2 text-slate-400" />
@@ -170,6 +180,8 @@ export default function SluzkiBoard() {
               <g key={edge.id} className="pointer-events-auto cursor-pointer group" onClick={(e) => { e.stopPropagation(); deleteEdge(edge.id); }}>
                 <line x1={start.x} y1={start.y} x2={end.x} y2={end.y} stroke="transparent" strokeWidth="30" />
                 <line x1={start.x} y1={start.y} x2={end.x} y2={end.y} stroke="#94a3b8" className="stroke-slate-400 stroke-[2px] transition-colors duration-300 group-hover:stroke-red-400 group-hover:stroke-[3px]" />
+                
+                {/* TACHO DE BASURA: Tiene 'exclude-from-export', el hook lo borrará a la fuerza en el onClone */}
                 <foreignObject x={midX - 12} y={midY - 12} width={24} height={24} className="overflow-visible pointer-events-none exclude-from-export">
                   <div className="w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all transform scale-125 md:scale-100">
                     <div className="bg-white text-red-500 rounded-full shadow-md border border-red-100 p-1 hover:bg-red-50"><Trash2 size={12} /></div>
@@ -198,7 +210,7 @@ export default function SluzkiBoard() {
         </div>
       )}
 
-      {/* --- MODAL (Igual) --- */}
+      {/* --- MODAL --- */}
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Nuevo Integrante">
         <div className="space-y-5">
           <div>
