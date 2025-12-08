@@ -76,7 +76,7 @@ export default function SluzkiBoard() {
           <div className="flex items-center gap-2 mb-3 pb-2 border-b border-slate-100">
             <BookOpen size={16} className="text-blue-500" />
             <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-              Referencias
+              Leyenda
             </h3>
           </div>
 
