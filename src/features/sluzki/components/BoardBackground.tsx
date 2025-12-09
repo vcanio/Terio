@@ -12,8 +12,8 @@ export const BoardBackground = () => {
       </div>
       
       <svg className="absolute inset-0 w-full h-full z-0 overflow-visible" viewBox="0 0 1000 1000">
-        <line x1="0" y1="500" x2="1000" y2="500" stroke="#475569" strokeWidth="2" strokeDasharray="8 8" />
-        <line x1="500" y1="0" x2="500" y2="1000" stroke="#475569" strokeWidth="2" strokeDasharray="8 8" />
+        <line x1="0" y1="500" x2="1000" y2="500" stroke="#353C4A" strokeWidth="2" strokeDasharray="8 8" />
+        <line x1="500" y1="0" x2="500" y2="1000" stroke="#353C4A" strokeWidth="2" strokeDasharray="8 8" />
         
         {/* Renderizado dinámico basado en las constantes */}
         {Object.values(LEVELS).map((lvl, index) => (

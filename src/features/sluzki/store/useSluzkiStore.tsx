@@ -21,16 +21,16 @@ interface SluzkiState {
   
   // Campos para recordar la última selección en el modal
   lastNodeType: NodeType;
-  lastNodeLevel: NetworkLevel;
-
+  
   // Estado para el zoom global de los nodos
   nodeScale: number;
   
   // Acciones
   setCenterName: (name: string) => void;
-  addNode: (name: string, type: NodeType, level: NetworkLevel) => void;
+  addNode: (name: string, type: NodeType, level?: NetworkLevel) => void;
   updateNodeName: (id: string, name: string) => void;
   updateNodePosition: (id: string, x: number, y: number) => void;
+  updateNodeLevel: (id: string, level: NetworkLevel) => void; // Nueva acción
   deleteNode: (id: string) => void;
   addEdge: (sourceId: string, targetId: string) => void;
   deleteEdge: (edgeId: string) => void;
@@ -47,21 +47,18 @@ export const useSluzkiStore = create<SluzkiState>()(
       
       // Valores por defecto iniciales
       lastNodeType: "family",
-      lastNodeLevel: 1,
       nodeScale: 1,
 
       setCenterName: (name) => set({ centerName: name }),
 
       setNodeScale: (scale) => set({ nodeScale: scale }),
 
-      addNode: (name, type, level) => {
+      addNode: (name, type, level = 1) => {
         set(produce((state: SluzkiState) => {
           if (!name.trim()) return;
           
-          // Cálculo de posición aleatoria dentro del cuadrante y nivel
-          const baseRadius = LEVELS[level].radius;
-          const variation = (Math.random() * 40) - 20;
-          const radius = baseRadius + variation;
+          // Cálculo simple: Ponerlo cerca del centro aleatoriamente
+          const radius = 50 + (Math.random() * 50);
 
           let minAngle = 0, maxAngle = 0;
           switch (type) {
@@ -77,27 +74,22 @@ export const useSluzkiStore = create<SluzkiState>()(
             id: Date.now().toString(),
             name,
             type,
-            level,
+            level: 1, // Siempre nace en nivel 1
             x: Math.cos(angle) * radius,
             y: Math.sin(angle) * radius,
           });
 
           // 2. ORDENAMIENTO AUTOMÁTICO
-          // Esto asegura que la lista del sidebar y los números en el mapa estén siempre agrupados
           state.nodes.sort((a, b) => {
-            // Criterio 1: Por Grupo (Familia -> Amigos -> Trabajo -> Comunidad)
             const diffGroup = GROUP_ORDER[a.type] - GROUP_ORDER[b.type];
             if (diffGroup !== 0) return diffGroup;
-
-            // Criterio 2: Por Nivel de cercanía (1 -> 2 -> 3)
             return a.level - b.level;
           });
 
           // Actualizamos la memoria del último tipo usado
           state.lastNodeType = type;
-          state.lastNodeLevel = level;
         }));
-        toast.success("Nodo agregado");
+        toast.success("Nodo agregado al centro");
       },
 
       updateNodeName: (id, newName) => set(produce((state: SluzkiState) => {
@@ -113,10 +105,22 @@ export const useSluzkiStore = create<SluzkiState>()(
         }
       })),
 
+      updateNodeLevel: (id, newLevel) => set(produce((state: SluzkiState) => {
+        const node = state.nodes.find(n => n.id === id);
+        if (node && node.level !== newLevel) {
+          node.level = newLevel;
+          // Reordenar nodos si cambia el nivel
+          state.nodes.sort((a, b) => {
+            const diffGroup = GROUP_ORDER[a.type] - GROUP_ORDER[b.type];
+            if (diffGroup !== 0) return diffGroup;
+            return a.level - b.level;
+          });
+        }
+      })),
+
       deleteNode: (id) => {
         set(produce((state: SluzkiState) => {
           state.nodes = state.nodes.filter(n => n.id !== id);
-          // Al borrar un nodo, borramos también sus conexiones
           state.edges = state.edges.filter(e => e.from !== id && e.to !== id);
         }));
         toast("Nodo eliminado", { icon: '🗑️' });
@@ -125,7 +129,6 @@ export const useSluzkiStore = create<SluzkiState>()(
       addEdge: (sourceId, targetId) => set(produce((state: SluzkiState) => {
         if (sourceId === targetId) return;
         
-        // Verificamos si ya existe la conexión (en cualquier dirección)
         const exists = state.edges.find(
           e => (e.from === sourceId && e.to === targetId) || (e.from === targetId && e.to === sourceId)
         );
@@ -158,7 +161,6 @@ export const useSluzkiStore = create<SluzkiState>()(
     {
       name: 'terio-sluzki-data',
       storage: createJSONStorage(() => localStorage),
-      // Validación de datos al cargar desde localStorage para evitar errores si cambia el esquema
       onRehydrateStorage: () => (state) => {
         if (state) {
           try {
@@ -170,7 +172,6 @@ export const useSluzkiStore = create<SluzkiState>()(
             console.log("✅ Estado rehidratado y validado correctamente");
           } catch (error) {
             console.error("❌ Error de validación en localStorage:", error);
-            toast.error("Datos corruptos detectados. Se ha reiniciado el estado por seguridad.");
           }
         }
       },

@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { toPng } from "html-to-image";
 import toast from "react-hot-toast"; 
 import { useSluzkiStore } from "../store/useSluzkiStore";
+import { LEVELS } from "../utils/constants";
 
 type ToPngOptions = Parameters<typeof toPng>[1];
 
@@ -11,7 +12,7 @@ export const useSluzkiBoard = (diagramRef?: React.RefObject<HTMLDivElement | nul
   const { 
     nodes, edges, centerName, 
     setCenterName, addNode, deleteNode, 
-    updateNodeName, updateNodePosition, 
+    updateNodeName, updateNodePosition, updateNodeLevel,
     addEdge, deleteEdge, clearBoard 
   } = useSluzkiStore();
 
@@ -35,6 +36,21 @@ export const useSluzkiBoard = (diagramRef?: React.RefObject<HTMLDivElement | nul
 
   const onNodeDrag = (id: string, x: number, y: number) => {
     updateNodePosition(id, x, y);
+
+    // Detección automática del nivel
+    const distance = Math.sqrt(x * x + y * y);
+    
+    // Asignar nivel según la distancia
+    let newLevel: 1 | 2 | 3 = 3;
+    if (distance <= LEVELS[1].boundary) {
+      newLevel = 1;
+    } else if (distance <= LEVELS[2].boundary) {
+      newLevel = 2;
+    } else {
+      newLevel = 3;
+    }
+
+    updateNodeLevel(id, newLevel);
   };
 
   const handleNodeClick = (id: string) => {
@@ -93,7 +109,6 @@ export const useSluzkiBoard = (diagramRef?: React.RefObject<HTMLDivElement | nul
         };
 
         if (diagramRef?.current) {
-          // CORRECCIÓN: Usamos 'element' que TypeScript sabe que no es null
           const containerRect = element.getBoundingClientRect();
           const diagramRect = diagramRef.current.getBoundingClientRect();
           const cropX = diagramRect.left - containerRect.left;
@@ -112,7 +127,6 @@ export const useSluzkiBoard = (diagramRef?: React.RefObject<HTMLDivElement | nul
           };
         }
 
-        // CORRECCIÓN: Usamos 'element' aquí también
         const dataUrl = await toPng(element, options);
         const link = document.createElement("a");
         link.download = `mapa-sluzki-${new Date().toISOString().slice(0,10)}.png`;

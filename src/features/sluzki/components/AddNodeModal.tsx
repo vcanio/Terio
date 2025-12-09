@@ -3,18 +3,17 @@ import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Plus, Target } from "lucide-react";
+import { Plus } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
-import { THEME, LEVELS } from "../utils/constants";
-import { NodeType, NetworkLevel } from "../types";
-import { NetworkLevelSchema, NodeTypeSchema } from "../schemas";
+import { THEME } from "../utils/constants";
+import { NodeType } from "../types";
+import { NodeTypeSchema } from "../schemas";
 import { useSluzkiStore } from "../store/useSluzkiStore";
 
-// Esquema específico para el formulario
+// Esquema específico para el formulario simplificado
 const CreateNodeSchema = z.object({
   name: z.string().min(1, "El nombre es obligatorio"),
   type: NodeTypeSchema,
-  level: NetworkLevelSchema,
 });
 
 type CreateNodeForm = z.infer<typeof CreateNodeSchema>;
@@ -22,12 +21,12 @@ type CreateNodeForm = z.infer<typeof CreateNodeSchema>;
 interface AddNodeModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: CreateNodeForm) => void;
+  onSubmit: (data: CreateNodeForm & { level: 1 | 2 | 3 }) => void;
 }
 
 export const AddNodeModal = ({ isOpen, onClose, onSubmit }: AddNodeModalProps) => {
   // Obtenemos los últimos valores utilizados del Store
-  const { lastNodeType, lastNodeLevel } = useSluzkiStore();
+  const { lastNodeType } = useSluzkiStore();
 
   const {
     register,
@@ -41,7 +40,6 @@ export const AddNodeModal = ({ isOpen, onClose, onSubmit }: AddNodeModalProps) =
     defaultValues: {
       name: "",
       type: "family",
-      level: 1,
     },
   });
 
@@ -51,18 +49,15 @@ export const AddNodeModal = ({ isOpen, onClose, onSubmit }: AddNodeModalProps) =
       reset({
         name: "", // El nombre siempre empieza vacío
         type: lastNodeType, // Usamos el último tipo seleccionado
-        level: lastNodeLevel, // Usamos el último nivel seleccionado
       });
     }
-  }, [isOpen, lastNodeType, lastNodeLevel, reset]);
+  }, [isOpen, lastNodeType, reset]);
 
   const currentType = watch("type");
-  const currentLevel = watch("level");
 
   const onFormSubmit = (data: CreateNodeForm) => {
-    onSubmit(data);
-    // Reseteamos solo el nombre para que visualmente se limpie antes de cerrar,
-    // aunque el useEffect lo sobrescribirá al abrir de nuevo.
+    // Siempre enviamos nivel 1 por defecto
+    onSubmit({ ...data, level: 1 });
     reset({ ...data, name: "" });
     onClose();
   };
@@ -103,36 +98,6 @@ export const AddNodeModal = ({ isOpen, onClose, onSubmit }: AddNodeModalProps) =
                 >
                   <Icon size={16} className={isSelected ? style.text : "opacity-70"} />
                   <span className="text-xs font-bold">{style.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Selector de Nivel */}
-        <div>
-          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Nivel de Cercanía</label>
-          <div className="flex flex-col gap-2">
-            {[1, 2, 3].map((lvl) => {
-              const isSelected = currentLevel === lvl;
-              return (
-                <button
-                  key={lvl}
-                  type="button"
-                  onClick={() => setValue("level", lvl as NetworkLevel)}
-                  className={`flex items-center justify-between p-3 rounded-xl border transition-all ${
-                    isSelected
-                      ? "bg-slate-800 text-white border-slate-800 shadow-md"
-                      : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${isSelected ? "bg-white text-slate-900" : "bg-slate-100 text-slate-500"}`}>
-                      {lvl}
-                    </div>
-                    <span className="text-xs font-bold uppercase">{LEVELS[lvl as NetworkLevel].label}</span>
-                  </div>
-                  {isSelected && <Target size={16} className="text-blue-400" />}
                 </button>
               );
             })}

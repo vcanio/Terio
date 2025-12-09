@@ -18,17 +18,17 @@ import { BoardLegend } from "@/features/sluzki/components/BoardLegend";
 
 export default function SluzkiBoard() {
   /* -------------------------------------------------------------------------- */
-  /*                                   Refs                                     */
+  /* Refs                                     */
   /* -------------------------------------------------------------------------- */
   const diagramRef = useRef<HTMLDivElement>(null);
 
   /* -------------------------------------------------------------------------- */
-  /*                           Estado global (Zustand)                           */
+  /* Estado global (Zustand)                           */
   /* -------------------------------------------------------------------------- */
   const { nodeScale, setNodeScale } = useSluzkiStore();
 
   /* -------------------------------------------------------------------------- */
-  /*                          Hook principal de lógica                           */
+  /* Hook principal de lógica                           */
   /* -------------------------------------------------------------------------- */
   const {
     containerRef,
@@ -56,19 +56,19 @@ export default function SluzkiBoard() {
   } = useSluzkiBoard(diagramRef);
 
   /* -------------------------------------------------------------------------- */
-  /*                            Estado local de la UI                            */
+  /* Estado local de la UI                            */
   /* -------------------------------------------------------------------------- */
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isListOpen, setIsListOpen] = useState(false);
   const [showLegend, setShowLegend] = useState(true);
 
   /* -------------------------------------------------------------------------- */
-  /*                    Derivados (posiciones, cálculos útiles)                 */
+  /* Derivados (posiciones, cálculos útiles)                 */
   /* -------------------------------------------------------------------------- */
   const sourcePos = sourceId ? getNodePos(sourceId) : { x: 0, y: 0 };
 
   /* -------------------------------------------------------------------------- */
-  /*                              Manejadores de Zoom                            */
+  /* Manejadores de Zoom                            */
   /* -------------------------------------------------------------------------- */
   const handleNodeScale = (delta: number) => {
     const newScale = Math.min(Math.max(nodeScale + delta, 0.4), 1.5);
@@ -76,7 +76,7 @@ export default function SluzkiBoard() {
   };
 
   /* -------------------------------------------------------------------------- */
-  /*                                 Loading                                     */
+  /* Loading                                     */
   /* -------------------------------------------------------------------------- */
   if (!isLoaded) {
     return (
@@ -87,20 +87,19 @@ export default function SluzkiBoard() {
   }
 
   /* -------------------------------------------------------------------------- */
-  /*                                  Render                                     */
+  /* Render                                     */
   /* -------------------------------------------------------------------------- */
   return (
     <div
       ref={containerRef}
       onMouseMove={handleMouseMove}
-      onWheel={(e) => handleNodeScale(e.deltaY > 0 ? -0.1 : 0.1)}
       className={`
         w-full h-full relative bg-slate-50 flex items-center justify-center overflow-hidden 
         ${isConnecting ? "cursor-crosshair" : ""}
       `}
     >
       {/* ---------------------------------------------------------------------- */}
-      {/*                            1. Toolbar superior                          */}
+      {/* 1. Toolbar superior                          */}
       {/* ---------------------------------------------------------------------- */}
       <BoardToolbar
         onOpenModal={() => setIsModalOpen(true)}
@@ -120,12 +119,12 @@ export default function SluzkiBoard() {
       />
 
       {/* ---------------------------------------------------------------------- */}
-      {/*                           2. Leyenda flotante                          */}
+      {/* 2. Leyenda flotante                          */}
       {/* ---------------------------------------------------------------------- */}
       <BoardLegend nodes={nodes} show={showLegend} />
 
       {/* ---------------------------------------------------------------------- */}
-      {/*                           3. Sidebar lateral                           */}
+      {/* 3. Sidebar lateral                           */}
       {/* ---------------------------------------------------------------------- */}
       <EditSidebar
         isOpen={isListOpen}
@@ -138,7 +137,7 @@ export default function SluzkiBoard() {
       />
 
       {/* ---------------------------------------------------------------------- */}
-      {/*                          4. Fondo circular grid                        */}
+      {/* 4. Fondo circular grid                        */}
       {/* ---------------------------------------------------------------------- */}
       <div
         ref={diagramRef}
@@ -148,7 +147,7 @@ export default function SluzkiBoard() {
       </div>
 
       {/* ---------------------------------------------------------------------- */}
-      {/*                       5. Área interactiva del tablero                   */}
+      {/* 5. Área interactiva del tablero                   */}
       {/* ---------------------------------------------------------------------- */}
       <div className="absolute top-1/2 left-1/2 w-0 h-0 z-10 overflow-visible">
         {/* Conexiones y nodo central */}
@@ -182,7 +181,7 @@ export default function SluzkiBoard() {
       </div>
 
       {/* ---------------------------------------------------------------------- */}
-      {/*                     6. Notificación flotante (Conexión)                */}
+      {/* 6. Notificación flotante (Conexión)                */}
       {/* ---------------------------------------------------------------------- */}
       {isConnecting && (
         <div className="exclude-from-export absolute top-20 md:bottom-8 md:top-auto bg-slate-900/90 backdrop-blur text-white px-5 py-3 rounded-full shadow-2xl text-sm font-medium flex gap-3 items-center pointer-events-none animate-in fade-in slide-in-from-top-4 md:slide-in-from-bottom-4 z-50 border border-white/10">
@@ -201,7 +200,7 @@ export default function SluzkiBoard() {
       )}
 
       {/* ---------------------------------------------------------------------- */}
-      {/*                         7. Modal para agregar nodos                    */}
+      {/* 7. Modal para agregar nodos                    */}
       {/* ---------------------------------------------------------------------- */}
       <AddNodeModal
         isOpen={isModalOpen}
