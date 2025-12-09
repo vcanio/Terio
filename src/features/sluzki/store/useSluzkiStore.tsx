@@ -1,10 +1,10 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { produce } from 'immer';
-import toast from 'react-hot-toast'; // Importamos toast
+import toast from 'react-hot-toast';
 import { NodeData, EdgeData, NodeType, NetworkLevel } from '../types';
 import { LEVELS } from '../utils/constants';
-import { SluzkiStateSchema } from '../schemas'; // Importamos el esquema Zod
+import { SluzkiStateSchema } from '../schemas';
 
 interface SluzkiState {
   nodes: NodeData[];
@@ -14,6 +14,9 @@ interface SluzkiState {
   // Nuevos campos para recordar la última selección
   lastNodeType: NodeType;
   lastNodeLevel: NetworkLevel;
+
+  // CAMBIO 1: Estado para el tamaño de los nodos
+  nodeScale: number;
   
   // Acciones
   setCenterName: (name: string) => void;
@@ -24,6 +27,8 @@ interface SluzkiState {
   addEdge: (sourceId: string, targetId: string) => void;
   deleteEdge: (edgeId: string) => void;
   clearBoard: () => void;
+  // CAMBIO 2: Acción para cambiar el tamaño
+  setNodeScale: (scale: number) => void;
 }
 
 export const useSluzkiStore = create<SluzkiState>()(
@@ -33,11 +38,15 @@ export const useSluzkiStore = create<SluzkiState>()(
       edges: [],
       centerName: "Usuario",
       
-      // Valores por defecto iniciales
+      // Valores por defecto
       lastNodeType: "family",
       lastNodeLevel: 1,
+      nodeScale: 1, // Tamaño normal por defecto
 
       setCenterName: (name) => set({ centerName: name }),
+
+      // CAMBIO 3: Implementación del setter
+      setNodeScale: (scale) => set({ nodeScale: scale }),
 
       addNode: (name, type, level) => {
         set(produce((state: SluzkiState) => {
@@ -65,11 +74,10 @@ export const useSluzkiStore = create<SluzkiState>()(
             y: Math.sin(angle) * radius,
           });
 
-          // ACTUALIZACIÓN: Guardamos la selección actual para la próxima vez
           state.lastNodeType = type;
           state.lastNodeLevel = level;
         }));
-        toast.success("Nodo agregado"); // Feedback
+        toast.success("Nodo agregado");
       },
 
       updateNodeName: (id, newName) => set(produce((state: SluzkiState) => {
@@ -90,7 +98,7 @@ export const useSluzkiStore = create<SluzkiState>()(
           state.nodes = state.nodes.filter(n => n.id !== id);
           state.edges = state.edges.filter(e => e.from !== id && e.to !== id);
         }));
-        toast("Nodo eliminado", { icon: '🗑️' }); // Feedback personalizado
+        toast("Nodo eliminado", { icon: '🗑️' });
       },
 
       addEdge: (sourceId, targetId) => set(produce((state: SluzkiState) => {
@@ -128,11 +136,9 @@ export const useSluzkiStore = create<SluzkiState>()(
     {
       name: 'terio-sluzki-data',
       storage: createJSONStorage(() => localStorage),
-      // Mágia de Zod: Validamos los datos al cargarlos del disco
       onRehydrateStorage: () => (state) => {
         if (state) {
           try {
-            // Intentamos validar lo que recuperamos
             SluzkiStateSchema.parse({
               nodes: state.nodes,
               edges: state.edges,
@@ -142,7 +148,6 @@ export const useSluzkiStore = create<SluzkiState>()(
           } catch (error) {
             console.error("❌ Error de validación en localStorage:", error);
             toast.error("Datos corruptos detectados. Se ha reiniciado el estado por seguridad.");
-            // Si falla, podrías decidir resetear el estado aquí si fuera crítico
           }
         }
       },

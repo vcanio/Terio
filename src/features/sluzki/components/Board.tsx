@@ -1,14 +1,18 @@
 "use client";
 
 import React, { useState, useRef } from "react";
-import { Plus, Link as LinkIcon, Download, Info, ChevronRight, List, Trash2, User, X, RotateCcw, BookOpen } from "lucide-react";
+import { Plus, Link as LinkIcon, Download, Info, ChevronRight, List, Trash2, User, X, RotateCcw, BookOpen, ZoomIn, ZoomOut } from "lucide-react";
 import { useSluzkiBoard } from "@/features/sluzki/hooks/useSluzkiBoard";
 import { DraggableNode } from "@/features/sluzki/components/DraggableNode";
-import { AddNodeModal } from "@/features/sluzki/components/AddNodeModal"; // Importamos el nuevo modal
+import { AddNodeModal } from "@/features/sluzki/components/AddNodeModal";
 import { THEME, LEVELS } from "@/features/sluzki/utils/constants";
+import { useSluzkiStore } from "@/features/sluzki/store/useSluzkiStore"; // Importamos el store directamente
 
 export default function SluzkiBoard() {
   const diagramRef = useRef<HTMLDivElement>(null);
+
+  // Traemos el estado y acción de la escala desde el store
+  const { nodeScale, setNodeScale } = useSluzkiStore();
 
   const {
     containerRef, nodes, edges, centerName, setCenterName,
@@ -24,23 +28,47 @@ export default function SluzkiBoard() {
   
   const sourcePos = sourceId ? getNodePos(sourceId) : { x: 0, y: 0 };
 
+  // Función para manejar el zoom de nodos (con límites)
+  const handleNodeScale = (delta: number) => {
+    // Límites: Mínimo 40% (0.4), Máximo 150% (1.5)
+    const newScale = Math.min(Math.max(nodeScale + delta, 0.4), 1.5); 
+    setNodeScale(newScale);
+  };
+
   if (!isLoaded) return <div className="w-full h-full bg-slate-50 flex items-center justify-center text-slate-400">Cargando mapa...</div>;
 
   return (
     <div
       ref={containerRef}
       onMouseMove={handleMouseMove}
+      // CAMBIO: Detectamos la rueda del ratón en el contenedor principal
+      onWheel={(e) => {
+        // Hacemos el cambio pequeño (0.1) según la dirección del scroll
+        handleNodeScale(e.deltaY > 0 ? -0.1 : 0.1);
+      }}
       className={`
         w-full h-full relative bg-slate-50 font-sans flex items-center justify-center overflow-hidden 
         ${isConnecting ? "cursor-crosshair" : ""}
       `}
     >
-      {/* ... (BARRA DE HERRAMIENTAS - Se mantiene igual) ... */}
+      {/* BARRA DE HERRAMIENTAS */}
       <div className="exclude-from-export absolute z-50 bottom-6 left-1/2 -translate-x-1/2 flex-row gap-4 lg:left-4 lg:top-1/2 lg:bottom-auto lg:-translate-y-1/2 lg:translate-x-0 lg:flex-col lg:gap-2 pointer-events-none transition-all duration-300">
         <div className="bg-white/95 backdrop-blur-sm p-2 rounded-2xl shadow-xl border border-slate-200 pointer-events-auto flex flex-row gap-3 items-center lg:flex-col lg:gap-2">
           
           <button onClick={() => setIsModalOpen(true)} className="p-3 bg-slate-900 text-white rounded-xl shadow-lg shadow-slate-900/20 hover:bg-slate-800 transition-all active:scale-95" title="Agregar Nodo"><Plus size={22} /></button>
           
+          <div className="w-px h-8 bg-slate-200 lg:w-8 lg:h-px"></div>
+
+          {/* CAMBIO: Nuevos controles de Zoom de Nodos */}
+          <button onClick={() => handleNodeScale(0.1)} className="p-3 bg-white text-slate-500 hover:bg-slate-50 rounded-xl transition-all" title="Agrandar Nodos"><ZoomIn size={22} /></button>
+          
+          {/* Indicador de porcentaje (opcional, pero útil) */}
+          <div className="hidden lg:flex items-center justify-center w-8 h-8 text-[10px] font-bold text-slate-400 select-none">
+            {Math.round(nodeScale * 100)}%
+          </div>
+
+          <button onClick={() => handleNodeScale(-0.1)} className="p-3 bg-white text-slate-500 hover:bg-slate-50 rounded-xl transition-all" title="Achicar Nodos"><ZoomOut size={22} /></button>
+
           <div className="w-px h-8 bg-slate-200 lg:w-8 lg:h-px"></div>
           
           <button onClick={() => { setIsConnecting(!isConnecting); setSourceId(null); }} className={`p-3 rounded-xl transition-all border ${isConnecting ? "bg-blue-600 border-blue-600 text-white shadow-md animate-pulse" : "bg-white border-transparent text-slate-500 hover:bg-slate-50"}`} title="Conectar"><LinkIcon size={22} /></button>
@@ -55,7 +83,7 @@ export default function SluzkiBoard() {
         </div>
       </div>
 
-      {/* ... (LEYENDA - Se mantiene igual) ... */}
+      {/* LEYENDA */}
       {showLegend && nodes.length > 0 && (
         <div className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-64 bg-white/95 backdrop-blur-sm shadow-xl rounded-2xl border border-slate-200 p-4 pointer-events-none sm:pointer-events-auto transition-all animate-in fade-in zoom-in-95 duration-200">
           <div className="flex items-center gap-2 mb-3 pb-2 border-b border-slate-100">
@@ -76,7 +104,7 @@ export default function SluzkiBoard() {
         </div>
       )}
 
-      {/* ... (SIDEBAR EDITABLE - Se mantiene igual, solo asegúrate de que use las props correctas) ... */}
+      {/* SIDEBAR EDITABLE */}
       <div id="sluzki-sidebar" className={`exclude-from-export absolute z-40 right-0 top-0 bottom-0 w-full sm:w-80 md:w-96 bg-white/95 backdrop-blur border-l border-slate-200 shadow-2xl transition-transform duration-300 ease-in-out flex flex-col ${isListOpen ? 'translate-x-0' : 'translate-x-full'}`}>
         <button onClick={() => setIsListOpen(!isListOpen)} className="absolute -left-10 top-20 p-2.5 bg-white border border-slate-200 rounded-l-xl shadow-sm text-slate-500 hover:text-slate-900 z-50 flex items-center justify-center">
             {isListOpen ? <ChevronRight size={20} /> : <List size={20} />}
@@ -113,11 +141,13 @@ export default function SluzkiBoard() {
         </div>
       </div>
 
-      {/* ... (FONDO Y LÍNEAS - Se mantienen igual) ... */}
+      {/* FONDO Y LÍNEAS */}
       <div 
         ref={diagramRef}
+        // CAMBIO: max-w-[85vmin] para arreglar el problema del responsive en laptops
         className="pointer-events-none absolute w-full max-w-[85vmin] aspect-square flex items-center justify-center opacity-50"
       >
+        {/* CAMBIO: Textos alejados del borde (2 en vez de 6) */}
         <div className="absolute inset-0 z-0 font-black uppercase tracking-widest select-none">
             <span className="absolute top-2 left-2 text-sm md:text-2xl text-emerald-900/80">Familia</span>
             <span className="absolute top-2 right-2 text-sm md:text-2xl text-amber-900/80 text-right">Amigos</span>
@@ -184,6 +214,7 @@ export default function SluzkiBoard() {
             onClick={() => handleNodeClick(node.id)} 
             isTarget={isConnecting && sourceId === node.id} 
             isSelected={sourceId === node.id} 
+            scale={nodeScale} // CAMBIO: Pasamos la escala global a cada nodo
           />
         ))}
       </div>
@@ -194,7 +225,6 @@ export default function SluzkiBoard() {
         </div>
       )}
 
-      {/* MODAL USANDO EL NUEVO COMPONENTE CONTROLADO POR HOOK FORM */}
       <AddNodeModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
