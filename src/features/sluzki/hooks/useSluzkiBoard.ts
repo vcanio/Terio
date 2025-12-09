@@ -68,10 +68,8 @@ export const useSluzkiBoard = (diagramRef?: React.RefObject<HTMLDivElement | nul
   };
 
   const downloadImage = useCallback(async () => {
-    // CORRECCIÓN: Capturamos la referencia en una variable local
     const element = containerRef.current;
     
-    // Verificamos la variable local en lugar de la ref
     if (!element) return;
     
     setSourceId(null);
