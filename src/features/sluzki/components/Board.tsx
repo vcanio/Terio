@@ -15,22 +15,12 @@ import { BoardToolbar } from "@/features/sluzki/components/BoardToolbar";
 import { EditSidebar } from "@/features/sluzki/components/EditSidebar";
 import { ConnectionLayer } from "@/features/sluzki/components/ConnectionLayer";
 import { BoardLegend } from "@/features/sluzki/components/BoardLegend";
-import { Modal } from "@/components/ui/Modal"; // Importamos el componente Modal existente
+import { Modal } from "@/components/ui/Modal";
 
 export default function SluzkiBoard() {
-  /* -------------------------------------------------------------------------- */
-  /* Refs                                     */
-  /* -------------------------------------------------------------------------- */
   const diagramRef = useRef<HTMLDivElement>(null);
-
-  /* -------------------------------------------------------------------------- */
-  /* Estado global (Zustand)                           */
-  /* -------------------------------------------------------------------------- */
   const { nodeScale, setNodeScale } = useSluzkiStore();
 
-  /* -------------------------------------------------------------------------- */
-  /* Hook principal de lógica                           */
-  /* -------------------------------------------------------------------------- */
   const {
     containerRef,
     nodes,
@@ -56,38 +46,23 @@ export default function SluzkiBoard() {
     isExporting,
   } = useSluzkiBoard(diagramRef);
 
-  /* -------------------------------------------------------------------------- */
-  /* Estado local de la UI                            */
-  /* -------------------------------------------------------------------------- */
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isListOpen, setIsListOpen] = useState(false);
   const [showLegend, setShowLegend] = useState(true);
-  const [isClearModalOpen, setIsClearModalOpen] = useState(false); // Nuevo estado para el modal de confirmación
+  const [isClearModalOpen, setIsClearModalOpen] = useState(false);
 
-  /* -------------------------------------------------------------------------- */
-  /* Derivados (posiciones, cálculos útiles)                 */
-  /* -------------------------------------------------------------------------- */
   const sourcePos = sourceId ? getNodePos(sourceId) : { x: 0, y: 0 };
 
-  /* -------------------------------------------------------------------------- */
-  /* Manejadores de Zoom                            */
-  /* -------------------------------------------------------------------------- */
   const handleNodeScale = (delta: number) => {
     const newScale = Math.min(Math.max(nodeScale + delta, 0.4), 1.5);
     setNodeScale(newScale);
   };
 
-  /* -------------------------------------------------------------------------- */
-  /* Manejador de Confirmación de Limpieza              */
-  /* -------------------------------------------------------------------------- */
   const handleConfirmClear = () => {
     clearBoard();
     setIsClearModalOpen(false);
   };
 
-  /* -------------------------------------------------------------------------- */
-  /* Loading                                     */
-  /* -------------------------------------------------------------------------- */
   if (!isLoaded) {
     return (
       <div className="w-full h-full bg-slate-50 flex items-center justify-center text-slate-400">
@@ -96,9 +71,6 @@ export default function SluzkiBoard() {
     );
   }
 
-  /* -------------------------------------------------------------------------- */
-  /* Render                                     */
-  /* -------------------------------------------------------------------------- */
   return (
     <div
       ref={containerRef}
@@ -108,9 +80,7 @@ export default function SluzkiBoard() {
         ${isConnecting ? "cursor-crosshair" : ""}
       `}
     >
-      {/* ---------------------------------------------------------------------- */}
-      {/* 1. Toolbar superior                          */}
-      {/* ---------------------------------------------------------------------- */}
+      {/* 1. Toolbar superior */}
       <BoardToolbar
         onOpenModal={() => setIsModalOpen(true)}
         onToggleConnect={() => {
@@ -120,22 +90,20 @@ export default function SluzkiBoard() {
         isConnecting={isConnecting}
         onToggleLegend={() => setShowLegend(!showLegend)}
         showLegend={showLegend}
+        onToggleList={() => setIsListOpen(!isListOpen)} // Conectado
+        isListOpen={isListOpen}                         // Conectado
         onDownload={downloadImage}
         isExporting={isExporting}
-        onClear={() => setIsClearModalOpen(true)} // Ahora abre el modal en lugar de borrar directo
+        onClear={() => setIsClearModalOpen(true)}
         onZoomIn={() => handleNodeScale(0.1)}
         onZoomOut={() => handleNodeScale(-0.1)}
         currentScale={nodeScale}
       />
 
-      {/* ---------------------------------------------------------------------- */}
-      {/* 2. Leyenda flotante                          */}
-      {/* ---------------------------------------------------------------------- */}
+      {/* 2. Leyenda flotante */}
       <BoardLegend nodes={nodes} show={showLegend} />
 
-      {/* ---------------------------------------------------------------------- */}
-      {/* 3. Sidebar lateral                           */}
-      {/* ---------------------------------------------------------------------- */}
+      {/* 3. Sidebar lateral */}
       <EditSidebar
         isOpen={isListOpen}
         toggle={() => setIsListOpen(!isListOpen)}
@@ -146,9 +114,7 @@ export default function SluzkiBoard() {
         deleteNode={deleteNode}
       />
 
-      {/* ---------------------------------------------------------------------- */}
-      {/* 4. Fondo circular grid                        */}
-      {/* ---------------------------------------------------------------------- */}
+      {/* 4. Fondo circular grid */}
       <div
         ref={diagramRef}
         className="pointer-events-none absolute w-full max-w-[85vmin] aspect-square flex items-center justify-center opacity-50"
@@ -156,11 +122,8 @@ export default function SluzkiBoard() {
         <BoardBackground />
       </div>
 
-      {/* ---------------------------------------------------------------------- */}
-      {/* 5. Área interactiva del tablero                   */}
-      {/* ---------------------------------------------------------------------- */}
+      {/* 5. Área interactiva del tablero */}
       <div className="absolute top-1/2 left-1/2 w-0 h-0 z-10 overflow-visible">
-        {/* Conexiones y nodo central */}
         <ConnectionLayer
           edges={edges}
           nodes={nodes}
@@ -175,7 +138,6 @@ export default function SluzkiBoard() {
           onCenterClick={() => handleNodeClick("center")}
         />
 
-        {/* Nodos interactivos */}
         {nodes.map((node, index) => (
           <DraggableNode
             key={node.id}
@@ -190,11 +152,9 @@ export default function SluzkiBoard() {
         ))}
       </div>
 
-      {/* ---------------------------------------------------------------------- */}
-      {/* 6. Notificación flotante (Conexión)                */}
-      {/* ---------------------------------------------------------------------- */}
+      {/* 6. Notificación flotante (Conexión) */}
       {isConnecting && (
-        <div className="exclude-from-export absolute top-20 md:bottom-8 md:top-auto bg-slate-900/90 backdrop-blur text-white px-5 py-3 rounded-full shadow-2xl text-sm font-medium flex gap-3 items-center pointer-events-none animate-in fade-in slide-in-from-top-4 md:slide-in-from-bottom-4 z-50 border border-white/10">
+        <div className="exclude-from-export absolute top-24 md:bottom-8 md:top-auto bg-slate-900/90 backdrop-blur text-white px-5 py-3 rounded-full shadow-2xl text-sm font-medium flex gap-3 items-center pointer-events-none animate-in fade-in slide-in-from-top-4 md:slide-in-from-bottom-4 z-50 border border-white/10">
           <Info size={18} className="text-blue-400 animate-pulse" />
           <div className="flex items-center gap-2">
             <span>Toca otro nodo para conectar</span>
@@ -209,18 +169,13 @@ export default function SluzkiBoard() {
         </div>
       )}
 
-      {/* ---------------------------------------------------------------------- */}
-      {/* 7. Modales                                 */}
-      {/* ---------------------------------------------------------------------- */}
-      
-      {/* Modal Agregar Nodo */}
+      {/* 7. Modales */}
       <AddNodeModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSubmit={(data) => addNode(data.name, data.type, data.level)}
       />
 
-      {/* Modal Confirmación Reinicio */}
       <Modal
         isOpen={isClearModalOpen}
         onClose={() => setIsClearModalOpen(false)}

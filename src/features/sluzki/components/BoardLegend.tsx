@@ -12,16 +12,29 @@ export const BoardLegend = ({ nodes, show }: BoardLegendProps) => {
   if (!show || nodes.length === 0) return null;
 
   return (
-    <div className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-64 bg-white/95 backdrop-blur-sm shadow-xl rounded-2xl border border-slate-200 p-4 pointer-events-none sm:pointer-events-auto transition-all animate-in fade-in zoom-in-95 duration-200">
+    <div className={`
+      absolute z-20 
+      transition-all duration-300 ease-in-out
+      bg-white/95 backdrop-blur-sm shadow-xl border border-slate-200 
       
-      {/* Encabezado de la Leyenda */}
-      <div className="flex items-center gap-2 mb-3 pb-2 border-b border-slate-100">
+      /* ESTILOS MÓVIL: Panel inferior ancho completo con margen */
+      bottom-24 left-4 right-4 top-auto translate-y-0 w-auto rounded-2xl
+      max-h-[30vh] overflow-y-auto pointer-events-auto
+
+      /* ESTILOS ESCRITORIO: Panel flotante a la derecha */
+      lg:top-1/2 lg:-translate-y-1/2 lg:right-4 lg:bottom-auto lg:left-auto lg:w-64 lg:max-h-[60vh]
+      
+      animate-in fade-in zoom-in-95
+    `}>
+      
+      {/* Encabezado fijo */}
+      <div className="p-4 sticky top-0 bg-white/95 backdrop-blur-sm border-b border-slate-100 z-10 flex items-center gap-2">
         <BookOpen size={16} className="text-blue-500" />
         <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Referencias</h3>
       </div>
 
-      {/* Lista de Nodos (Ya vienen ordenados desde el Store) */}
-      <ul className="space-y-2 max-h-[60vh] overflow-y-auto pr-1 custom-scrollbar">
+      {/* Lista de Nodos */}
+      <ul className="p-4 pt-2 space-y-2">
         {nodes.map((node, index) => {
           const style = THEME[node.type];
           return (
@@ -31,7 +44,7 @@ export const BoardLegend = ({ nodes, show }: BoardLegendProps) => {
                 {index + 1}
               </span>
               {/* Nombre del nodo */}
-              <span className="text-sm font-medium text-slate-700 leading-snug pt-0.5 wrap-break-word w-full">
+              <span className="text-sm font-medium text-slate-700 leading-snug pt-0.5 wrap-break-words w-full">
                 {node.name}
               </span>
             </li>

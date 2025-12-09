@@ -1,6 +1,6 @@
 import { ChevronRight, List, Trash2, User, X } from "lucide-react";
-import { NodeData } from "../types"; //
-import { THEME } from "../utils/constants"; //
+import { NodeData } from "../types";
+import { THEME } from "../utils/constants";
 
 interface EditSidebarProps {
   isOpen: boolean;
@@ -16,14 +16,26 @@ export const EditSidebar = ({
   isOpen, toggle, nodes, centerName, setCenterName, updateNodeName, deleteNode 
 }: EditSidebarProps) => {
   return (
-    <div id="sluzki-sidebar" className={`exclude-from-export absolute z-40 right-0 top-0 bottom-0 w-full sm:w-80 md:w-96 bg-white/95 backdrop-blur border-l border-slate-200 shadow-2xl transition-transform duration-300 ease-in-out flex flex-col ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
-      <button onClick={toggle} className="absolute -left-10 top-20 p-2.5 bg-white border border-slate-200 rounded-l-xl shadow-sm text-slate-500 hover:text-slate-900 z-50 flex items-center justify-center">
+    <div id="sluzki-sidebar" className={`
+      exclude-from-export absolute z-40 right-0 top-0 bottom-0 
+      bg-white/95 backdrop-blur border-l border-slate-200 shadow-2xl 
+      transition-transform duration-300 ease-in-out flex flex-col
+      
+      /* Ancho responsivo */
+      w-full sm:w-80 md:w-96
+      
+      ${isOpen ? 'translate-x-0' : 'translate-x-full'}
+    `}>
+      {/* Botón de pestaña: SOLO visible en Desktop */}
+      <button onClick={toggle} className="hidden md:flex absolute -left-10 top-24 p-2.5 bg-white border border-slate-200 rounded-l-xl shadow-sm text-slate-500 hover:text-slate-900 items-center justify-center">
           {isOpen ? <ChevronRight size={20} /> : <List size={20} />}
       </button>
 
       <div className="flex justify-between items-center p-4 border-b border-slate-100">
           <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2"><List size={16} /> Editar Red</h2>
-          <button onClick={toggle} className="md:hidden p-1 text-slate-400"><X size={20}/></button>
+          <button onClick={toggle} className="p-2 text-slate-400 hover:bg-slate-100 rounded-full transition-colors">
+            <X size={20}/>
+          </button>
       </div>
       
       <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 m-3 shadow-sm">
@@ -31,7 +43,7 @@ export const EditSidebar = ({
         <input type="text" value={centerName} onChange={(e) => setCenterName(e.target.value)} className="w-full text-base font-bold bg-transparent border-b border-slate-300 focus:border-blue-500 p-1 focus:outline-none text-slate-800" placeholder="Nombre..." />
       </div>
 
-      <div className="flex-1 overflow-y-auto p-3 space-y-2.5">
+      <div className="flex-1 overflow-y-auto p-3 space-y-2.5 custom-scrollbar">
         {nodes.length === 0 && <div className="text-center text-slate-400 text-sm py-10 opacity-60">Sin Nodos.</div>}
         {nodes.map((node, index) => {
           const style = THEME[node.type];
