@@ -116,13 +116,13 @@ export default function SluzkiBoard() {
       {/* ... (FONDO Y LÍNEAS - Se mantienen igual) ... */}
       <div 
         ref={diagramRef}
-        className="pointer-events-none absolute w-full max-w-[95vmin] aspect-square flex items-center justify-center opacity-50"
+        className="pointer-events-none absolute w-full max-w-[85vmin] aspect-square flex items-center justify-center opacity-50"
       >
         <div className="absolute inset-0 z-0 font-black uppercase tracking-widest select-none">
-            <span className="absolute top-6 left-6 text-sm md:text-2xl text-emerald-900/80">Familia</span>
-            <span className="absolute top-6 right-6 text-sm md:text-2xl text-amber-900/80 text-right">Amigos</span>
-            <span className="absolute bottom-6 left-6 text-sm md:text-2xl text-blue-900/80">Laboral</span>
-            <span className="absolute bottom-6 right-6 text-sm md:text-2xl text-purple-900/80 text-right">Comunidad</span>
+            <span className="absolute top-2 left-2 text-sm md:text-2xl text-emerald-900/80">Familia</span>
+            <span className="absolute top-2 right-2 text-sm md:text-2xl text-amber-900/80 text-right">Amigos</span>
+            <span className="absolute bottom-2 left-2 text-sm md:text-2xl text-blue-900/80">Laboral</span>
+            <span className="absolute bottom-2 right-2 text-sm md:text-2xl text-purple-900/80 text-right">Comunidad</span>
         </div>
         
         <svg className="absolute inset-0 w-full h-full z-0 overflow-visible" viewBox="0 0 1000 1000">

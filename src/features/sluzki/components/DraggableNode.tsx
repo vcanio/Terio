@@ -45,7 +45,7 @@ export const DraggableNode = ({ node, displayNumber, onDrag, onClick, isTarget, 
       dragListener={!isTarget}
     >
       <div className={`
-        w-10 h-10 md:w-12 md:h-12 rounded-full flex flex-col items-center justify-center
+        w-8 h-8 md:w-10 md:h-10 rounded-full flex flex-col items-center justify-center
         border-[3px] shadow-sm transition-all duration-200 bg-white
         ${style.border}
         ${isTarget ? "ring-4 ring-blue-400 ring-offset-2 scale-110 z-30" : ""} 
