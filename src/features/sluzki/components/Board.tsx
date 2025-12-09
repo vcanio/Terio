@@ -15,6 +15,7 @@ import { BoardToolbar } from "@/features/sluzki/components/BoardToolbar";
 import { EditSidebar } from "@/features/sluzki/components/EditSidebar";
 import { ConnectionLayer } from "@/features/sluzki/components/ConnectionLayer";
 import { BoardLegend } from "@/features/sluzki/components/BoardLegend";
+import { Modal } from "@/components/ui/Modal"; // Importamos el componente Modal existente
 
 export default function SluzkiBoard() {
   /* -------------------------------------------------------------------------- */
@@ -61,6 +62,7 @@ export default function SluzkiBoard() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isListOpen, setIsListOpen] = useState(false);
   const [showLegend, setShowLegend] = useState(true);
+  const [isClearModalOpen, setIsClearModalOpen] = useState(false); // Nuevo estado para el modal de confirmación
 
   /* -------------------------------------------------------------------------- */
   /* Derivados (posiciones, cálculos útiles)                 */
@@ -73,6 +75,14 @@ export default function SluzkiBoard() {
   const handleNodeScale = (delta: number) => {
     const newScale = Math.min(Math.max(nodeScale + delta, 0.4), 1.5);
     setNodeScale(newScale);
+  };
+
+  /* -------------------------------------------------------------------------- */
+  /* Manejador de Confirmación de Limpieza              */
+  /* -------------------------------------------------------------------------- */
+  const handleConfirmClear = () => {
+    clearBoard();
+    setIsClearModalOpen(false);
   };
 
   /* -------------------------------------------------------------------------- */
@@ -112,7 +122,7 @@ export default function SluzkiBoard() {
         showLegend={showLegend}
         onDownload={downloadImage}
         isExporting={isExporting}
-        onClear={clearBoard}
+        onClear={() => setIsClearModalOpen(true)} // Ahora abre el modal en lugar de borrar directo
         onZoomIn={() => handleNodeScale(0.1)}
         onZoomOut={() => handleNodeScale(-0.1)}
         currentScale={nodeScale}
@@ -200,13 +210,46 @@ export default function SluzkiBoard() {
       )}
 
       {/* ---------------------------------------------------------------------- */}
-      {/* 7. Modal para agregar nodos                    */}
+      {/* 7. Modales                                 */}
       {/* ---------------------------------------------------------------------- */}
+      
+      {/* Modal Agregar Nodo */}
       <AddNodeModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSubmit={(data) => addNode(data.name, data.type, data.level)}
       />
+
+      {/* Modal Confirmación Reinicio */}
+      <Modal
+        isOpen={isClearModalOpen}
+        onClose={() => setIsClearModalOpen(false)}
+        title="¿Reiniciar el mapa?"
+      >
+        <div className="space-y-6">
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-900">
+            <p className="font-medium">⚠️ Advertencia</p>
+            <p className="mt-1 text-amber-800/80">
+              Esta acción eliminará permanentemente todos los nodos y conexiones actuales. No se puede deshacer.
+            </p>
+          </div>
+          
+          <div className="flex gap-3 justify-end">
+            <button 
+              onClick={() => setIsClearModalOpen(false)}
+              className="px-4 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
+            >
+              Cancelar
+            </button>
+            <button 
+              onClick={handleConfirmClear}
+              className="px-4 py-2.5 text-sm font-bold text-white bg-red-500 hover:bg-red-600 rounded-xl transition-all shadow-md shadow-red-500/20 active:scale-95"
+            >
+              Sí, reiniciar todo
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
