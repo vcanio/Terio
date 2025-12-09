@@ -225,6 +225,19 @@ export default function SluzkiBoard() {
         </div>
       )}
 
+{isConnecting && (
+        <div className="exclude-from-export absolute top-20 md:bottom-8 md:top-auto bg-slate-900/90 backdrop-blur text-white px-5 py-3 rounded-full shadow-2xl text-sm font-medium flex gap-3 items-center pointer-events-none animate-in fade-in slide-in-from-top-4 md:slide-in-from-bottom-4 z-50 border border-white/10">
+          <Info size={18} className="text-blue-400 animate-pulse" /> 
+          <div className="flex items-center gap-2">
+            <span>Toca otro nodo para conectar</span>
+            <span className="hidden sm:inline w-px h-4 bg-slate-600 mx-1"></span>
+            <span className="text-slate-300 font-normal text-xs flex items-center gap-1.5">
+              <kbd className="font-sans bg-slate-700 px-1.5 py-0.5 rounded border border-slate-600 shadow-sm text-[10px] min-w-24px text-center">Esc</kbd> 
+              <span className="hidden sm:inline">para salir</span>
+            </span>
+          </div>
+        </div>
+      )}
       <AddNodeModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}

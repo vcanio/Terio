@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { toPng } from "html-to-image";
 import { useSluzkiStore } from "../store/useSluzkiStore";
 
@@ -20,6 +20,28 @@ export const useSluzkiBoard = (diagramRef?: React.RefObject<HTMLDivElement | nul
   const [isConnecting, setIsConnecting] = useState(false);
   const [sourceId, setSourceId] = useState<string | null>(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+
+  // --- NUEVO CÓDIGO: Manejo de tecla Escape ---
+  // Permite salir del modo unión o cancelar una selección al presionar Esc
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        // Si estamos conectando, cancelamos el modo y la selección
+        if (isConnecting) {
+          setIsConnecting(false);
+          setSourceId(null);
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    // Limpiamos el evento al desmontar o actualizar
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isConnecting]); // Dependencia: se actualiza cuando cambia el modo
+  // ---------------------------------------------
 
   const onNodeDrag = (id: string, x: number, y: number) => {
     updateNodePosition(id, x, y);
