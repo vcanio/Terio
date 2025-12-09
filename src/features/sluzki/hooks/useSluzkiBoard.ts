@@ -1,9 +1,8 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { toPng } from "html-to-image";
+import toast from "react-hot-toast"; 
 import { useSluzkiStore } from "../store/useSluzkiStore";
 
-// TRUCO: Extraemos el tipo de 'Options' directamente de la función toPng
-// ya que la librería no lo exporta explícitamente.
 type ToPngOptions = Parameters<typeof toPng>[1];
 
 export const useSluzkiBoard = (diagramRef?: React.RefObject<HTMLDivElement | null>) => {
@@ -21,27 +20,18 @@ export const useSluzkiBoard = (diagramRef?: React.RefObject<HTMLDivElement | nul
   const [sourceId, setSourceId] = useState<string | null>(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
-  // --- NUEVO CÓDIGO: Manejo de tecla Escape ---
-  // Permite salir del modo unión o cancelar una selección al presionar Esc
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        // Si estamos conectando, cancelamos el modo y la selección
         if (isConnecting) {
           setIsConnecting(false);
           setSourceId(null);
         }
       }
     };
-
     window.addEventListener("keydown", handleKeyDown);
-
-    // Limpiamos el evento al desmontar o actualizar
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [isConnecting]); // Dependencia: se actualiza cuando cambia el modo
-  // ---------------------------------------------
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isConnecting]);
 
   const onNodeDrag = (id: string, x: number, y: number) => {
     updateNodePosition(id, x, y);
@@ -78,61 +68,74 @@ export const useSluzkiBoard = (diagramRef?: React.RefObject<HTMLDivElement | nul
   };
 
   const downloadImage = useCallback(async () => {
-    if (containerRef.current === null) return;
+    // CORRECCIÓN: Capturamos la referencia en una variable local
+    const element = containerRef.current;
+    
+    // Verificamos la variable local en lugar de la ref
+    if (!element) return;
     
     setSourceId(null);
     setIsConnecting(false);
     setIsExporting(true);
 
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    const exportTask = new Promise<void>(async (resolve, reject) => {
+      try {
+        await new Promise((r) => setTimeout(r, 500));
 
-    try {
-      // Usamos el tipo extraído aquí
-      let options: ToPngOptions = {
-        cacheBust: true,
-        pixelRatio: 2, 
-        backgroundColor: "#f8fafc",
-        // Tipamos el nodo como 'any' para evitar conflictos con la librería, 
-        // pero validamos que sea un Elemento HTML antes de acceder a classList
-        filter: (node: Node) => {
-          if (node instanceof Element && node.classList.contains("exclude-from-export")) {
-            return false;
-          }
-          return true;
-        },
-      };
-
-      if (diagramRef?.current) {
-        const containerRect = containerRef.current.getBoundingClientRect();
-        const diagramRect = diagramRef.current.getBoundingClientRect();
-
-        const cropX = diagramRect.left - containerRect.left;
-        const cropY = diagramRect.top - containerRect.top;
-
-        options = {
-          ...options,
-          width: diagramRect.width,
-          height: diagramRect.height,
-          style: {
-            transform: `translate(-${cropX}px, -${cropY}px)`,
-            transformOrigin: "top left",
-            width: `${containerRect.width}px`,
-            height: `${containerRect.height}px`,
-          }
+        let options: ToPngOptions = {
+          cacheBust: true,
+          pixelRatio: 2, 
+          backgroundColor: "#f8fafc",
+          filter: (node: Node) => {
+            if (node instanceof Element && node.classList.contains("exclude-from-export")) {
+              return false;
+            }
+            return true;
+          },
         };
+
+        if (diagramRef?.current) {
+          // CORRECCIÓN: Usamos 'element' que TypeScript sabe que no es null
+          const containerRect = element.getBoundingClientRect();
+          const diagramRect = diagramRef.current.getBoundingClientRect();
+          const cropX = diagramRect.left - containerRect.left;
+          const cropY = diagramRect.top - containerRect.top;
+
+          options = {
+            ...options,
+            width: diagramRect.width,
+            height: diagramRect.height,
+            style: {
+              transform: `translate(-${cropX}px, -${cropY}px)`,
+              transformOrigin: "top left",
+              width: `${containerRect.width}px`,
+              height: `${containerRect.height}px`,
+            }
+          };
+        }
+
+        // CORRECCIÓN: Usamos 'element' aquí también
+        const dataUrl = await toPng(element, options);
+        const link = document.createElement("a");
+        link.download = `mapa-sluzki-${new Date().toISOString().slice(0,10)}.png`;
+        link.href = dataUrl;
+        link.click();
+        
+        resolve();
+      } catch (err) {
+        console.error("Error al exportar:", err);
+        reject(err);
+      } finally {
+        setIsExporting(false);
       }
+    });
 
-      const dataUrl = await toPng(containerRef.current, options);
-      const link = document.createElement("a");
-      link.download = `mapa-sluzki-${new Date().toISOString().slice(0,10)}.png`;
-      link.href = dataUrl;
-      link.click();
+    toast.promise(exportTask, {
+      loading: 'Generando imagen',
+      success: '¡Mapa descargado correctamente!',
+      error: 'Hubo un error al generar la imagen',
+    });
 
-    } catch (err) {
-      console.error("Error al exportar:", err);
-    } finally {
-      setIsExporting(false);
-    }
   }, [containerRef, diagramRef]);
 
   return {

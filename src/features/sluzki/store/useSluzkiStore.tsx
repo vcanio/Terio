@@ -6,16 +6,24 @@ import { NodeData, EdgeData, NodeType, NetworkLevel } from '../types';
 import { LEVELS } from '../utils/constants';
 import { SluzkiStateSchema } from '../schemas';
 
+// Definimos el orden de prioridad de los grupos para el ordenamiento
+const GROUP_ORDER: Record<NodeType, number> = {
+  family: 1,
+  friend: 2,
+  work: 3,
+  community: 4,
+};
+
 interface SluzkiState {
   nodes: NodeData[];
   edges: EdgeData[];
   centerName: string;
   
-  // Nuevos campos para recordar la última selección
+  // Campos para recordar la última selección en el modal
   lastNodeType: NodeType;
   lastNodeLevel: NetworkLevel;
 
-  // CAMBIO 1: Estado para el tamaño de los nodos
+  // Estado para el zoom global de los nodos
   nodeScale: number;
   
   // Acciones
@@ -27,7 +35,6 @@ interface SluzkiState {
   addEdge: (sourceId: string, targetId: string) => void;
   deleteEdge: (edgeId: string) => void;
   clearBoard: () => void;
-  // CAMBIO 2: Acción para cambiar el tamaño
   setNodeScale: (scale: number) => void;
 }
 
@@ -38,20 +45,20 @@ export const useSluzkiStore = create<SluzkiState>()(
       edges: [],
       centerName: "Usuario",
       
-      // Valores por defecto
+      // Valores por defecto iniciales
       lastNodeType: "family",
       lastNodeLevel: 1,
-      nodeScale: 1, // Tamaño normal por defecto
+      nodeScale: 1,
 
       setCenterName: (name) => set({ centerName: name }),
 
-      // CAMBIO 3: Implementación del setter
       setNodeScale: (scale) => set({ nodeScale: scale }),
 
       addNode: (name, type, level) => {
         set(produce((state: SluzkiState) => {
           if (!name.trim()) return;
           
+          // Cálculo de posición aleatoria dentro del cuadrante y nivel
           const baseRadius = LEVELS[level].radius;
           const variation = (Math.random() * 40) - 20;
           const radius = baseRadius + variation;
@@ -65,6 +72,7 @@ export const useSluzkiStore = create<SluzkiState>()(
           }
           const angle = Math.random() * (maxAngle - minAngle) + minAngle;
 
+          // 1. Insertamos el nuevo nodo
           state.nodes.push({
             id: Date.now().toString(),
             name,
@@ -74,6 +82,18 @@ export const useSluzkiStore = create<SluzkiState>()(
             y: Math.sin(angle) * radius,
           });
 
+          // 2. ORDENAMIENTO AUTOMÁTICO
+          // Esto asegura que la lista del sidebar y los números en el mapa estén siempre agrupados
+          state.nodes.sort((a, b) => {
+            // Criterio 1: Por Grupo (Familia -> Amigos -> Trabajo -> Comunidad)
+            const diffGroup = GROUP_ORDER[a.type] - GROUP_ORDER[b.type];
+            if (diffGroup !== 0) return diffGroup;
+
+            // Criterio 2: Por Nivel de cercanía (1 -> 2 -> 3)
+            return a.level - b.level;
+          });
+
+          // Actualizamos la memoria del último tipo usado
           state.lastNodeType = type;
           state.lastNodeLevel = level;
         }));
@@ -96,6 +116,7 @@ export const useSluzkiStore = create<SluzkiState>()(
       deleteNode: (id) => {
         set(produce((state: SluzkiState) => {
           state.nodes = state.nodes.filter(n => n.id !== id);
+          // Al borrar un nodo, borramos también sus conexiones
           state.edges = state.edges.filter(e => e.from !== id && e.to !== id);
         }));
         toast("Nodo eliminado", { icon: '🗑️' });
@@ -104,6 +125,7 @@ export const useSluzkiStore = create<SluzkiState>()(
       addEdge: (sourceId, targetId) => set(produce((state: SluzkiState) => {
         if (sourceId === targetId) return;
         
+        // Verificamos si ya existe la conexión (en cualquier dirección)
         const exists = state.edges.find(
           e => (e.from === sourceId && e.to === targetId) || (e.from === targetId && e.to === sourceId)
         );
@@ -136,6 +158,7 @@ export const useSluzkiStore = create<SluzkiState>()(
     {
       name: 'terio-sluzki-data',
       storage: createJSONStorage(() => localStorage),
+      // Validación de datos al cargar desde localStorage para evitar errores si cambia el esquema
       onRehydrateStorage: () => (state) => {
         if (state) {
           try {
