@@ -11,7 +11,7 @@ interface SidebarProps {
 }
 
 const menuItems = [
-  { name: 'Inicio', href: '/', icon: LayoutDashboard, hidden: true },
+  { name: 'Inicio', href: '/', icon: LayoutDashboard, hidden: false },
   { name: 'Mapa de Red', href: '/tools/sluzki', icon: Network },
 ];
 
