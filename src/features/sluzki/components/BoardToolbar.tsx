@@ -40,7 +40,21 @@ export const BoardToolbar = ({
   const btnInactive = "bg-white border-transparent text-slate-500 hover:bg-slate-50";
 
   return (
-    <div className="exclude-from-export absolute z-30 bottom-8 left-0 right-0 flex justify-center pointer-events-none lg:left-4 lg:right-auto lg:top-1/2 lg:bottom-auto lg:-translate-y-1/2">
+    <div className="
+      exclude-from-export 
+      
+      /* --- CORRECCIÓN MÓVIL --- */
+      /* 'fixed' asegura que flote sobre la interfaz del navegador en móviles */
+      fixed md:absolute 
+      z-30 
+      
+      /* Subimos la barra (bottom-14) para evitar la zona táctil inferior del celular */
+      bottom-14 md:bottom-8 
+      /* ------------------------ */
+
+      left-0 right-0 flex justify-center pointer-events-none 
+      lg:left-4 lg:right-auto lg:top-1/2 lg:bottom-auto lg:-translate-y-1/2
+    ">
       <div className="
         pointer-events-auto
         bg-white/95 backdrop-blur-md 
