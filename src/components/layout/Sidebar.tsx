@@ -2,12 +2,11 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Network, Settings, PanelLeftClose } from 'lucide-react';
+import { LayoutDashboard, Network, Settings, PanelLeftClose, X } from 'lucide-react';
 
-// Definimos las props que recibirá el componente
 interface SidebarProps {
-  isOpen?: boolean;
-  toggle?: () => void;
+  isOpen: boolean;
+  toggle: () => void;
 }
 
 const menuItems = [
@@ -15,31 +14,36 @@ const menuItems = [
   { name: 'Mapa de Red', href: '/tools/sluzki', icon: Network },
 ];
 
-export function Sidebar({ isOpen = true, toggle }: SidebarProps) {
+export function Sidebar({ isOpen, toggle }: SidebarProps) {
   const pathname = usePathname();
 
   return (
     <aside 
       className={`
-        fixed left-0 top-0 h-screen w-64 z-40
+        fixed top-0 left-0 h-screen w-64
         bg-slate-900 text-white border-r border-slate-800
         flex flex-col transition-transform duration-300 ease-in-out
+        z-50 shadow-2xl md:shadow-none
+        
+        /* Control total de visibilidad vía isOpen */
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
       `}
     >
-      <div className="p-6 border-b border-slate-800 flex justify-between items-start">
+      <div className="p-6 border-b border-slate-800 flex justify-between items-start h-[88px] md:h-auto">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Terio<span className="text-blue-500">.</span></h1>
           <p className="text-xs text-slate-400 mt-1">Gestión para T.O.</p>
         </div>
         
-        {/* Botón para cerrar dentro del Sidebar */}
+        {/* Botón de cerrar (Funciona en móvil y escritorio) */}
         <button 
           onClick={toggle}
           className="text-slate-400 hover:text-white transition-colors p-1 rounded-md hover:bg-slate-800"
           title="Ocultar menú"
         >
-          <PanelLeftClose size={20} />
+          {/* Usamos X en móvil (más común) y PanelLeftClose en escritorio */}
+          <X className="md:hidden" size={24} />
+          <PanelLeftClose className="hidden md:block" size={20} />
         </button>
       </div>
 
@@ -52,6 +56,8 @@ export function Sidebar({ isOpen = true, toggle }: SidebarProps) {
               <Link 
                 key={item.href} 
                 href={item.href}
+                // En móvil, cerramos el menú al hacer click. En escritorio, lo mantenemos.
+                onClick={() => window.innerWidth < 768 && toggle()} 
                 className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                   isActive ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
                 }`}

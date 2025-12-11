@@ -1,7 +1,7 @@
-import { useRef } from "react";
-import { motion } from "framer-motion";
+import { useEffect, useRef } from "react";
+import { motion, useMotionValue } from "framer-motion"; // Importamos useMotionValue
 import { NodeData } from "../types";
-import { THEME } from "../utils/constants";
+import { THEME, LEVELS } from "../utils/constants";
 
 interface DraggableNodeProps {
   node: NodeData;
@@ -11,37 +11,77 @@ interface DraggableNodeProps {
   isTarget: boolean;
   isSelected: boolean;
   scale: number;
+  screenToBoard: (x: number, y: number) => { x: number; y: number };
 }
 
-export const DraggableNode = ({ node, displayNumber, onDrag, onClick, isTarget, isSelected, scale }: DraggableNodeProps) => {
+export const DraggableNode = ({ 
+  node, 
+  displayNumber, 
+  onDrag, 
+  onClick, 
+  isTarget, 
+  isSelected, 
+  scale, 
+  screenToBoard 
+}: DraggableNodeProps) => {
   const style = THEME[node.type];
-  // Guardamos la posición inicial para calcular el delta del arrastre
-  const dragStartPos = useRef({ x: node.x, y: node.y });
+  
+  // 1. Creamos valores de movimiento controlados manualmente
+  const x = useMotionValue(node.x);
+  const y = useMotionValue(node.y);
+
+  // 2. Sincronizamos: Si la posición cambia por algo que NO es arrastre (ej: carga inicial, deshacer), actualizamos.
+  useEffect(() => {
+    x.set(node.x);
+    y.set(node.y);
+  }, [node.x, node.y, x, y]);
+
+  // Guardamos el punto exacto de agarre
+  const grabOffset = useRef({ x: 0, y: 0 });
 
   return (
     <motion.div
-      // 1. PADRE: Maneja SOLO posición (x, y). NO le pasamos 'scale' aquí.
-      // Esto asegura que el sistema de coordenadas del arrastre sea siempre 1:1 con el mouse.
-      initial={{ x: node.x, y: node.y }}
-      animate={{ x: node.x, y: node.y }}
+      // 3. Vinculamos la posición visual a nuestros valores controlados
+      style={{ x, y }} 
       
-      // Transición suave solo para posición (opcional, puedes quitarlo si quieres movimiento instantáneo)
-      transition={{ duration: 0.1, ease: "easeOut" }}
-      
-      // Configuración de Arrastre
       drag
       dragMomentum={false}
-      onDragStart={() => {
-        dragStartPos.current = { x: node.x, y: node.y };
+      dragElastic={0} // Importante: cero elasticidad para que no parezca que se estira
+      
+      onDragStart={(_, info) => {
+        const mousePosOnBoard = screenToBoard(info.point.x, info.point.y);
+        grabOffset.current = {
+          x: node.x - mousePosOnBoard.x,
+          y: node.y - mousePosOnBoard.y
+        };
       }}
+      
       onDrag={(_, info) => {
-        // Al no escalar este div, info.offset siempre es correcto en píxeles de pantalla
-        const newX = dragStartPos.current.x + info.offset.x;
-        const newY = dragStartPos.current.y + info.offset.y;
+        // A. Calcular posición deseada basada en el mouse
+        const mousePosOnBoard = screenToBoard(info.point.x, info.point.y);
+        let newX = mousePosOnBoard.x + grabOffset.current.x;
+        let newY = mousePosOnBoard.y + grabOffset.current.y;
+        
+        // B. Lógica de "Clamping" (Restricción Circular)
+        const maxRadius = LEVELS[3].boundary; // Límite del círculo exterior (480px)
+        const distance = Math.sqrt(newX * newX + newY * newY);
+
+        if (distance > maxRadius) {
+          // Si se pasa, calculamos el punto exacto en el borde en el mismo ángulo
+          const scaleFactor = maxRadius / distance;
+          newX *= scaleFactor;
+          newY *= scaleFactor;
+        }
+        
+        // C. ACTUALIZAR VISUALMENTE (Esto arregla el bug)
+        // Forzamos al componente visual a quedarse en la coordenada restringida
+        x.set(newX);
+        y.set(newY);
+        
+        // D. ACTUALIZAR LÓGICA (Líneas y Store)
         onDrag(node.id, newX, newY);
       }}
       
-      // Clases de posicionamiento
       className="absolute z-20 cursor-grab active:cursor-grabbing group"
       onClick={(e) => {
         e.stopPropagation();
@@ -49,13 +89,10 @@ export const DraggableNode = ({ node, displayNumber, onDrag, onClick, isTarget, 
       }}
       dragListener={!isTarget}
     >
-      {/* 2. HIJO: Maneja SOLO la escala y la apariencia visual.
-          Al ser un hijo, su escala es visual y no afecta la lógica de coordenadas del padre.
-      */}
       <motion.div 
         initial={{ scale: 0, opacity: 0 }}
         animate={{ scale: scale, opacity: 1 }}
-        transition={{ duration: 0.2, ease: "easeOut" }} // Animación suave al hacer zoom
+        transition={{ duration: 0.2, ease: "easeOut" }}
         
         className={`
           w-10 h-10 md:w-12 md:h-12 rounded-full flex flex-col items-center justify-center
