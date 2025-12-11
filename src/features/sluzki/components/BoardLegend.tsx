@@ -18,7 +18,7 @@ export const BoardLegend = ({ nodes, show }: BoardLegendProps) => {
       bg-white/95 backdrop-blur-sm shadow-xl border border-slate-200 
       
       /* ESTILOS MÓVIL: Panel inferior ancho completo con margen */
-      bottom-24 left-4 right-4 top-auto translate-y-0 w-auto rounded-2xl
+      bottom-32 left-4 right-4 top-auto translate-y-0 w-auto rounded-2xl
       max-h-[30vh] overflow-y-auto pointer-events-auto
 
       /* ESTILOS ESCRITORIO: Panel flotante a la derecha */

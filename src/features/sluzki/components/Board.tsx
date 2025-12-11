@@ -99,10 +99,10 @@ export default function SluzkiBoard() {
       ref={containerRef}
       onMouseMove={handleMouseMove}
       className={`
-        w-full h-full relative bg-slate-50 flex items-center justify-center overflow-hidden 
+        w-full h-dvh relative bg-slate-50 flex items-center justify-center overflow-hidden 
         
         /* AJUSTE PARA MÓVIL: Padding inferior para subir el mapa */
-        pb-40 md:pb-0
+        pb-44 md:pb-0
         
         ${isConnecting ? "cursor-crosshair" : ""}
       `}
