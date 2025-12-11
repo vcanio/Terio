@@ -52,27 +52,19 @@ export default function SluzkiBoard() {
   const [showLegend, setShowLegend] = useState(true);
   const [isClearModalOpen, setIsClearModalOpen] = useState(false);
 
-  // --- NUEVA FUNCIÓN PROFESIONAL DE PROYECCIÓN DE COORDENADAS ---
-  // Convierte cualquier punto X,Y de la pantalla (mouse/touch) a coordenadas X,Y internas del tablero (lógicas)
+  // --- FUNCIÓN DE PROYECCIÓN DE COORDENADAS ---
   const screenToBoard = useCallback((screenX: number, screenY: number) => {
     if (!diagramRef.current) return { x: 0, y: 0 };
 
-    // 1. Obtenemos la posición y dimensiones REALES del tablero en la pantalla
     const rect = diagramRef.current.getBoundingClientRect();
-
-    // 2. Calculamos el centro visual del tablero en la pantalla
     const centerX = rect.left + rect.width / 2;
     const centerY = rect.top + rect.height / 2;
 
-    // 3. Proyectamos:
-    //    - Restamos el centro para que (0,0) esté en el medio.
-    //    - Dividimos por la escala para revertir el efecto del zoom/responsividad.
     return {
       x: (screenX - centerX) / responsiveScale,
       y: (screenY - centerY) / responsiveScale,
     };
   }, [responsiveScale]);
-  // -------------------------------------------------------------
 
   const sourcePos = sourceId ? getNodePos(sourceId) : { x: 0, y: 0 };
 
@@ -99,10 +91,14 @@ export default function SluzkiBoard() {
       ref={containerRef}
       onMouseMove={handleMouseMove}
       className={`
-        w-full h-dvh relative bg-slate-50 flex items-center justify-center overflow-hidden 
+        /* --- CORRECCIÓN CRÍTICA PARA MÓVIL --- */
+        w-full 
+        h-dvh /* Usamos dvh (Dynamic Viewport Height) para que la barra del navegador no tape el final */
+        relative bg-slate-50 flex items-center justify-center overflow-hidden 
         
-        /* AJUSTE PARA MÓVIL: Padding inferior para subir el mapa */
-        pb-44 md:pb-0
+        /* Padding inferior fuerte para empujar el mapa visualmente hacia arriba */
+        pb-48 md:pb-0 
+        /* ------------------------------------- */
         
         ${isConnecting ? "cursor-crosshair" : ""}
       `}
@@ -172,7 +168,6 @@ export default function SluzkiBoard() {
               isTarget={isConnecting && sourceId === node.id}
               isSelected={sourceId === node.id}
               scale={nodeScale}
-              // PASAMOS LA FUNCIÓN DE PROYECCIÓN EN VEZ DE LA ESCALA
               screenToBoard={screenToBoard} 
             />
           ))}
