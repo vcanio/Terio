@@ -100,8 +100,10 @@ export default function SluzkiBoard() {
       onMouseMove={handleMouseMove}
       className={`
         w-full h-full relative bg-slate-50 flex items-center justify-center overflow-hidden 
-        /* AQUÍ ESTÁ EL CAMBIO PARA MÓVIL: */
-        pb-40 md:pb-0 
+        
+        /* AJUSTE PARA MÓVIL: Padding inferior para subir el mapa */
+        pb-40 md:pb-0
+        
         ${isConnecting ? "cursor-crosshair" : ""}
       `}
     >
