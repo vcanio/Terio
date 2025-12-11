@@ -8,7 +8,6 @@ interface BoardLegendProps {
 }
 
 export const BoardLegend = ({ nodes, show }: BoardLegendProps) => {
-  // Si no se debe mostrar o no hay nodos, no renderizamos nada
   if (!show || nodes.length === 0) return null;
 
   return (
@@ -17,24 +16,36 @@ export const BoardLegend = ({ nodes, show }: BoardLegendProps) => {
       transition-all duration-300 ease-in-out
       bg-white/95 backdrop-blur-sm shadow-xl border border-slate-200 
       
-      /* ESTILOS MÓVIL: Panel inferior ancho completo con margen */
-      bottom-32 left-4 right-4 top-auto translate-y-0 w-auto rounded-2xl
-      max-h-[30vh] overflow-y-auto pointer-events-auto
+      /* --- CAMBIOS PARA MÓVIL --- */
+      
+      /* 1. POSICIÓN: Lo movemos ARRIBA (top-4) para usar el espacio vacío */
+      top-4 left-4 right-4 bottom-auto translate-y-0 
+      
+      /* 2. TAMAÑO: Ancho automático y bordes redondeados */
+      w-auto rounded-2xl
+      
+      /* 3. SCROLL: Limitamos la altura a aprox. 3 elementos + encabezado (~180px). 
+            Si pasa de eso, aparece scroll vertical. */
+      max-h-[180px] overflow-y-auto 
+      
+      /* -------------------------- */
 
-      /* ESTILOS ESCRITORIO: Panel flotante a la derecha */
+      pointer-events-auto
+
+      /* ESTILOS ESCRITORIO (Se mantienen a la derecha y centrados) */
       lg:top-1/2 lg:-translate-y-1/2 lg:right-4 lg:bottom-auto lg:left-auto lg:w-64 lg:max-h-[60vh]
       
       animate-in fade-in zoom-in-95
     `}>
       
-      {/* Encabezado fijo */}
-      <div className="p-4 sticky top-0 bg-white/95 backdrop-blur-sm border-b border-slate-100 z-10 flex items-center gap-2">
+      {/* Encabezado fijo (sticky) para que no se pierda al hacer scroll */}
+      <div className="p-3 sticky top-0 bg-white/95 backdrop-blur-sm border-b border-slate-100 z-10 flex items-center gap-2">
         <BookOpen size={16} className="text-blue-500" />
         <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Referencias</h3>
       </div>
 
       {/* Lista de Nodos */}
-      <ul className="p-4 pt-2 space-y-2">
+      <ul className="p-3 space-y-2">
         {nodes.map((node, index) => {
           const style = THEME[node.type];
           return (
