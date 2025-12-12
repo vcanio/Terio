@@ -7,7 +7,6 @@ import {
   ZoomIn, 
   ZoomOut,
   Loader2,
-  List,
   SquarePen
 } from "lucide-react";
 
@@ -19,7 +18,7 @@ interface BoardToolbarProps {
   showLegend: boolean;
   onToggleList: () => void;
   isListOpen: boolean;
-  onDownload: () => void;
+  onOpenDownloadModal: () => void; // <--- Única función necesaria ahora
   isExporting: boolean;
   onClear: () => void;
   onZoomIn: () => void;
@@ -31,7 +30,8 @@ export const BoardToolbar = ({
   onOpenModal, onToggleConnect, isConnecting,
   onToggleLegend, showLegend, 
   onToggleList, isListOpen,
-  onDownload, isExporting, onClear,
+  onOpenDownloadModal, // <--- Usamos esta prop
+  isExporting, onClear,
   onZoomIn, onZoomOut, currentScale
 }: BoardToolbarProps) => {
   
@@ -41,26 +41,13 @@ export const BoardToolbar = ({
 
   return (
     <div className="
-      exclude-from-export 
-      
-      /* --- CORRECCIÓN MÓVIL --- */
-      /* 'fixed' asegura que flote sobre la interfaz del navegador en móviles */
-      fixed md:absolute 
-      z-30 
-      
-      /* Subimos la barra (bottom-14) para evitar la zona táctil inferior del celular */
-      bottom-14 md:bottom-8 
-      /* ------------------------ */
-
+      exclude-from-export fixed md:absolute z-30 bottom-14 md:bottom-8 
       left-0 right-0 flex justify-center pointer-events-none 
       lg:left-4 lg:right-auto lg:top-1/2 lg:bottom-auto lg:-translate-y-1/2
     ">
       <div className="
-        pointer-events-auto
-        bg-white/95 backdrop-blur-md 
-        p-2 mx-4 rounded-2xl shadow-xl border border-slate-200/60
-        flex flex-row gap-2 items-center
-        overflow-x-auto max-w-[90vw] no-scrollbar
+        pointer-events-auto bg-white/95 backdrop-blur-md p-2 mx-4 rounded-2xl shadow-xl border border-slate-200/60
+        flex flex-row gap-2 items-center overflow-x-auto max-w-[90vw] no-scrollbar
         lg:flex-col lg:max-w-none lg:overflow-visible
       ">
         
@@ -70,27 +57,15 @@ export const BoardToolbar = ({
         
         <div className="w-px h-6 bg-slate-200 shrink-0 lg:w-6 lg:h-px"></div>
 
-        <button 
-          onClick={onToggleList} 
-          className={`${btnClass} ${isListOpen ? "bg-slate-100 text-slate-900 font-bold" : btnInactive}`} 
-          title="Editar Lista"
-        >
+        <button onClick={onToggleList} className={`${btnClass} ${isListOpen ? "bg-slate-100 text-slate-900 font-bold" : btnInactive}`} title="Editar Lista">
           <SquarePen size={20} />
         </button>
 
-        <button 
-          onClick={onToggleConnect} 
-          className={`${btnClass} border ${isConnecting ? btnActive + " animate-pulse" : btnInactive}`} 
-          title="Conectar"
-        >
+        <button onClick={onToggleConnect} className={`${btnClass} border ${isConnecting ? btnActive + " animate-pulse" : btnInactive}`} title="Conectar">
           <LinkIcon size={20} />
         </button>
         
-        <button 
-          onClick={onToggleLegend} 
-          className={`${btnClass} border ${showLegend ? "bg-slate-100 text-slate-900" : btnInactive}`} 
-          title="Ver Leyenda"
-        >
+        <button onClick={onToggleLegend} className={`${btnClass} border ${showLegend ? "bg-slate-100 text-slate-900" : btnInactive}`} title="Ver Leyenda">
           <BookOpen size={20} />
         </button>
 
@@ -110,20 +85,17 @@ export const BoardToolbar = ({
 
         <div className="w-px h-6 bg-slate-200 shrink-0 lg:w-6 lg:h-px"></div>
 
+        {/* ÚNICO BOTÓN DE DESCARGA */}
         <button 
-          onClick={onDownload} 
+          onClick={onOpenDownloadModal} 
           disabled={isExporting} 
           className={`${btnClass} ${btnInactive} disabled:opacity-50`} 
-          title="Descargar"
+          title="Descargar..."
         >
           {isExporting ? <Loader2 size={20} className="animate-spin text-blue-600" /> : <Download size={20} />}
         </button>
         
-        <button 
-          onClick={onClear} 
-          className={`${btnClass} bg-white text-red-400 hover:text-red-600 hover:bg-red-50`} 
-          title="Limpiar"
-        >
+        <button onClick={onClear} className={`${btnClass} bg-white text-red-400 hover:text-red-600 hover:bg-red-50`} title="Limpiar">
           <RotateCcw size={20} />
         </button>
       </div>

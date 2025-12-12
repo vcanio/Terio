@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Network, Settings, PanelLeftClose, X } from 'lucide-react';
+import { LayoutDashboard, Network, Settings, PanelLeftClose, X, ClipboardCheck } from 'lucide-react';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -12,6 +12,8 @@ interface SidebarProps {
 const menuItems = [
   { name: 'Inicio', href: '/', icon: LayoutDashboard, hidden: false },
   { name: 'Mapa de Red', href: '/tools/sluzki', icon: Network },
+  { name: 'OPHI-II', href: '/tools/ophi', icon: Network, hidden: false },
+  { name: 'Cuestionario Volitivo (VQ)', href: '/tools/vq', icon: ClipboardCheck, hidden: false },
 ];
 
 export function Sidebar({ isOpen, toggle }: SidebarProps) {

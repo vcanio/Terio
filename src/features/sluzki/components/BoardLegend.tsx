@@ -41,7 +41,7 @@ export const BoardLegend = ({ nodes, show }: BoardLegendProps) => {
       {/* Encabezado fijo (sticky) para que no se pierda al hacer scroll */}
       <div className="p-3 sticky top-0 bg-white/95 backdrop-blur-sm border-b border-slate-100 z-10 flex items-center gap-2">
         <BookOpen size={16} className="text-blue-500" />
-        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Referencias</h3>
+        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Leyenda</h3>
       </div>
 
       {/* Lista de Nodos */}
