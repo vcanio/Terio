@@ -15,25 +15,28 @@ import { EditSidebar } from "@/features/sluzki/components/EditSidebar";
 import { ConnectionLayer } from "@/features/sluzki/components/ConnectionLayer";
 import { BoardLegend } from "@/features/sluzki/components/BoardLegend";
 import { ExportTableTemplate } from "@/features/sluzki/components/ExportTableTemplate";
-import { ExportCombinedTemplate } from "@/features/sluzki/components/ExportCombinedTemplate"; // <--- Importar
+import { ExportCombinedTemplate } from "@/features/sluzki/components/ExportCombinedTemplate";
 import { DownloadModal } from "@/features/sluzki/components/DownloadModal";
 import { Modal } from "@/components/ui/Modal";
 
 export default function SluzkiBoard() {
+  const containerRef = useRef<HTMLDivElement>(null); // CAMBIO: Creamos ref aquí
   const diagramRef = useRef<HTMLDivElement>(null);
   const { nodeScale, setNodeScale } = useSluzkiStore();
 
+  const { scale: responsiveScale, BOARD_SIZE } = useBoardResponsive(containerRef);
+
+  // CAMBIO: Pasamos refs y escala al hook
   const {
-    containerRef, tableRef, combinedRef, // <--- Obtener combinedRef
+    // containerRef ya lo tenemos aquí
+    tableRef, combinedRef,
     nodes, edges, centerName, setCenterName,
     isConnecting, setIsConnecting, sourceId, setSourceId, mousePos,
     addNode, deleteNode, deleteEdge, updateNodeName,
     onNodeDrag, handleNodeClick, handleMouseMove, getNodePos,
-    downloadImage, downloadTable, downloadTableImage, downloadCombinedImage, // <--- Obtener función
+    downloadImage, downloadTable, downloadTableImage, downloadCombinedImage,
     clearBoard, isLoaded, isExporting,
-  } = useSluzkiBoard(diagramRef);
-
-  const { scale: responsiveScale, BOARD_SIZE } = useBoardResponsive(containerRef);
+  } = useSluzkiBoard(diagramRef, containerRef, responsiveScale);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isListOpen, setIsListOpen] = useState(false);
@@ -41,7 +44,6 @@ export default function SluzkiBoard() {
   const [isClearModalOpen, setIsClearModalOpen] = useState(false);
   const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
 
-  // ... (funciones screenToBoard, etc. igual que antes)
   const screenToBoard = useCallback((screenX: number, screenY: number) => {
     if (!diagramRef.current) return { x: 0, y: 0 };
     const rect = diagramRef.current.getBoundingClientRect();
@@ -77,16 +79,13 @@ export default function SluzkiBoard() {
     >
       {/* --- ELEMENTOS OCULTOS PARA EXPORTACIÓN --- */}
       <div className="fixed top-0 -left-[9999px] overflow-hidden pointer-events-none z-0">
-        {/* Tabla sola */}
         <div ref={tableRef}>
           <ExportTableTemplate nodes={nodes} centerName={centerName} />
         </div>
-        {/* Reporte Combinado (Mapa + Tabla) */}
         <div ref={combinedRef}>
           <ExportCombinedTemplate nodes={nodes} edges={edges} centerName={centerName} />
         </div>
       </div>
-      {/* ------------------------------------------- */}
 
       <BoardToolbar
         onOpenModal={() => setIsModalOpen(true)}
@@ -104,7 +103,6 @@ export default function SluzkiBoard() {
         currentScale={nodeScale}
       />
 
-      {/* Resto del renderizado del tablero (BoardLegend, EditSidebar, div diagramRef, etc.) */}
       <BoardLegend nodes={nodes} show={showLegend} />
 
       <EditSidebar
@@ -152,7 +150,8 @@ export default function SluzkiBoard() {
               isTarget={isConnecting && sourceId === node.id}
               isSelected={sourceId === node.id}
               scale={nodeScale}
-              screenToBoard={screenToBoard} 
+              screenToBoard={screenToBoard}
+              isConnecting={isConnecting} // <--- PASAMOS LA PROP AQUÍ
             />
           ))}
         </div>
@@ -195,14 +194,13 @@ export default function SluzkiBoard() {
         </div>
       </Modal>
 
-      {/* Nuevo Modal de Descarga */}
       <DownloadModal
         isOpen={isDownloadModalOpen}
         onClose={() => setIsDownloadModalOpen(false)}
         onDownloadMap={downloadImage}
         onDownloadTableImage={downloadTableImage}
         onDownloadCSV={downloadTable}
-        onDownloadCombined={downloadCombinedImage} // <--- Pasamos la función combinada
+        onDownloadCombined={downloadCombinedImage}
         isExporting={isExporting}
       />
     </div>

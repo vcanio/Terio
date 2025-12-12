@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, RefObject } from "react";
 import { toPng } from "html-to-image";
 import toast from "react-hot-toast"; 
 import { useSluzkiStore } from "../store/useSluzkiStore";
@@ -6,10 +6,15 @@ import { LEVELS, THEME } from "../utils/constants";
 
 type ToPngOptions = Parameters<typeof toPng>[1];
 
-export const useSluzkiBoard = (diagramRef?: React.RefObject<HTMLDivElement | null>) => {
-  const containerRef = useRef<HTMLDivElement>(null);
+// CAMBIO: Aceptamos containerRef y scale como argumentos
+export const useSluzkiBoard = (
+  diagramRef: React.RefObject<HTMLDivElement | null> | undefined,
+  containerRef: React.RefObject<HTMLDivElement | null>, 
+  scale: number
+) => {
+  // ELIMINADO: const containerRef = useRef<HTMLDivElement>(null); 
   const tableRef = useRef<HTMLDivElement>(null);
-  const combinedRef = useRef<HTMLDivElement>(null); // <--- NUEVA REF
+  const combinedRef = useRef<HTMLDivElement>(null);
   
   const { 
     nodes, edges, centerName, 
@@ -23,7 +28,6 @@ export const useSluzkiBoard = (diagramRef?: React.RefObject<HTMLDivElement | nul
   const [sourceId, setSourceId] = useState<string | null>(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
-  // ... (useEffect y funciones de interacción se mantienen igual) ...
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -62,9 +66,11 @@ export const useSluzkiBoard = (diagramRef?: React.RefObject<HTMLDivElement | nul
       const rect = containerRef.current.getBoundingClientRect();
       const centerX = rect.width / 2;
       const centerY = rect.height / 2;
+      
+      // CAMBIO: Dividimos por scale para ajustar la posición a las coordenadas internas
       setMousePos({
-        x: e.clientX - rect.left - centerX,
-        y: e.clientY - rect.top - centerY,
+        x: (e.clientX - rect.left - centerX) / scale,
+        y: (e.clientY - rect.top - centerY) / scale,
       });
     }
   };
@@ -74,8 +80,6 @@ export const useSluzkiBoard = (diagramRef?: React.RefObject<HTMLDivElement | nul
     const n = nodes.find((x) => x.id === id);
     return n ? { x: n.x, y: n.y } : { x: 0, y: 0 };
   };
-
-  // --- DESCARGAS ---
 
   const downloadTable = useCallback(() => {
     if (nodes.length === 0) {
@@ -158,7 +162,6 @@ export const useSluzkiBoard = (diagramRef?: React.RefObject<HTMLDivElement | nul
     toast.promise(exportTask, { loading: 'Generando mapa...', success: '¡Mapa descargado!', error: 'Error al generar' });
   }, [containerRef, diagramRef]);
 
-  // --- NUEVA FUNCIÓN: REPORTE COMBINADO ---
   const downloadCombinedImage = useCallback(async () => {
     const combinedElement = combinedRef.current;
     if (!combinedElement) return;
@@ -166,11 +169,11 @@ export const useSluzkiBoard = (diagramRef?: React.RefObject<HTMLDivElement | nul
     const exportTask = new Promise<void>(async (resolve, reject) => {
       try {
         setIsExporting(true);
-        await new Promise((r) => setTimeout(r, 100)); // Esperar renderizado
+        await new Promise((r) => setTimeout(r, 100)); 
         
         const dataUrl = await toPng(combinedElement, { 
           cacheBust: true, 
-          pixelRatio: 2, // Alta resolución para impresión
+          pixelRatio: 2, 
           backgroundColor: "#ffffff" 
         });
         
@@ -194,7 +197,7 @@ export const useSluzkiBoard = (diagramRef?: React.RefObject<HTMLDivElement | nul
   }, [combinedRef]);
 
   return {
-    containerRef, tableRef, combinedRef, // <--- Retornamos combinedRef
+    containerRef, tableRef, combinedRef,
     nodes, edges, centerName, setCenterName,
     isConnecting, setIsConnecting, sourceId, setSourceId, mousePos,
     isLoaded: true,
@@ -204,7 +207,7 @@ export const useSluzkiBoard = (diagramRef?: React.RefObject<HTMLDivElement | nul
     downloadImage,
     downloadTable,
     downloadTableImage,
-    downloadCombinedImage, // <--- Retornamos nueva función
+    downloadCombinedImage,
     isExporting, 
   };
 };
