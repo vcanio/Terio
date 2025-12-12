@@ -1,11 +1,11 @@
 // src/features/vq/components/VQDashboard.tsx
 "use client";
 
-import { useState } from "react"; // <--- ESTO FALTABA
+import { useState } from "react"; 
 import { useVQStore } from "../store/useVQStore";
 import { Plus, Trash2, Calendar, MapPin, FileText } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
-import { VQReport } from "./VQReport"; // Importamos el reporte
+import { VQReport } from "./VQReport"; 
 
 export const VQDashboard = () => {
   const { sessions, createSession, deleteSession, setActiveSession } = useVQStore();
@@ -27,6 +27,8 @@ export const VQDashboard = () => {
 
   return (
     <div className="p-6 md:p-10 max-w-4xl mx-auto">
+      {/* ... (código del encabezado y listado de sesiones sin cambios) ... */}
+
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Cuestionario Volitivo (VQ)</h1>
@@ -100,7 +102,9 @@ export const VQDashboard = () => {
             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Actividad / Tarea</label>
             <input 
               autoFocus
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:border-blue-500"
+              // --- CAMBIO CLAVE AQUÍ ---
+              // Cambiamos el color base del texto a 'text-slate-800' y el del placeholder a 'placeholder:text-slate-400'
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:border-blue-500 text-slate-800 placeholder:text-slate-400"
               placeholder="Ej: Preparar desayuno, Juego grupal..."
               value={formData.activity}
               onChange={e => setFormData({...formData, activity: e.target.value})}
@@ -109,7 +113,9 @@ export const VQDashboard = () => {
           <div>
             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Ambiente / Contexto</label>
             <input 
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:border-blue-500"
+              // --- CAMBIO CLAVE AQUÍ ---
+              // Cambiamos el color base del texto a 'text-slate-800' y el del placeholder a 'placeholder:text-slate-400'
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:border-blue-500 text-slate-800 placeholder:text-slate-400"
               placeholder="Ej: Sala de terapia, Hogar, Escuela..."
               value={formData.environment}
               onChange={e => setFormData({...formData, environment: e.target.value})}

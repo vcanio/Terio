@@ -1,12 +1,13 @@
+// src/features/vq/components/VQEvaluator.tsx
 "use client";
 
 import { useVQStore } from "../store/useVQStore";
 import { VQ_GROUPS, SCORES, VQScore, ALL_VQ_ITEMS_COUNT } from "../utils/constants";
-import { ArrowLeft, MessageSquare } from "lucide-react";
+import { ArrowLeft, MessageSquare, FilePenLine, CheckCircle } from "lucide-react";
 import { useState } from "react";
 
 export const VQEvaluator = () => {
-  const { sessions, activeSessionId, setActiveSession, updateObservation, updateNote } = useVQStore();
+  const { sessions, activeSessionId, setActiveSession, updateObservation, updateNote, updateConclusion } = useVQStore();
   const [openNoteId, setOpenNoteId] = useState<number | null>(null);
 
   const currentSession = sessions.find(s => s.id === activeSessionId);
@@ -53,7 +54,7 @@ export const VQEvaluator = () => {
         {VQ_GROUPS.map((group, groupIndex) => (
           <div key={groupIndex} className="space-y-3">
             
-            {/* Título de la Dimensión (Lateral en la tabla, Encabezado aquí) */}
+            {/* Título de la Dimensión */}
             <div className="flex items-center gap-2 px-1">
                 <span className="text-xs font-black text-slate-400 uppercase tracking-widest bg-slate-200/50 px-2 py-1 rounded">
                     {group.name}
@@ -111,7 +112,7 @@ export const VQEvaluator = () => {
                         placeholder="Observación cualitativa..."
                         value={obs?.note || ''}
                         onChange={(e) => updateNote(item.id, e.target.value)}
-                        className="w-full text-sm p-3 border border-slate-200 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all resize-y min-h-20"
+                        className="w-full text-sm p-3 border border-slate-200 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all resize-y min-h-20 text-slate-800 placeholder:text-slate-400"
                       />
                     </div>
                   )}
@@ -121,7 +122,40 @@ export const VQEvaluator = () => {
           </div>
         ))}
 
-        <div className="h-8"></div> {/* Espacio extra al final */}
+        {/* --- SECCIÓN DE CONCLUSIÓN Y CIERRE --- */}
+        <div className="pt-6">
+          <div className="flex items-center gap-2 px-1 mb-4">
+              <span className="text-xs font-black text-blue-500 uppercase tracking-widest bg-blue-50 border border-blue-100 px-2 py-1 rounded">
+                  Cierre de Evaluación
+              </span>
+              <div className="h-px bg-blue-100 flex-1"></div>
+          </div>
+
+          <div className="bg-white rounded-xl p-5 shadow-sm border border-slate-200">
+            <div className="flex items-center gap-2 mb-3 text-slate-800 font-bold">
+              <FilePenLine size={20} className="text-blue-600"/>
+              <h3>Conclusión y Sugerencias</h3>
+            </div>
+            <textarea
+              value={currentSession.conclusion || ''}
+              onChange={(e) => updateConclusion(e.target.value)}
+              placeholder="Escribe aquí tu análisis general, conclusiones profesionales y sugerencias de intervención..."
+              className="w-full min-h-[150px] p-4 text-base bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-slate-800 placeholder:text-slate-400 resize-y"
+            />
+            <p className="text-xs text-slate-400 mt-2 text-right">
+              Esta información aparecerá al final del reporte PDF.
+            </p>
+          </div>
+
+          <button 
+            onClick={() => setActiveSession(null)}
+            className="w-full mt-6 bg-slate-900 text-white font-bold py-4 rounded-xl shadow-lg shadow-slate-900/10 hover:bg-slate-800 active:scale-95 transition-all flex items-center justify-center gap-2"
+          >
+            <CheckCircle size={20} /> Finalizar y Guardar
+          </button>
+        </div>
+
+        <div className="h-8"></div>
       </div>
     </div>
   );

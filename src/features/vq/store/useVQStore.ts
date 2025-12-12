@@ -15,7 +15,8 @@ interface Session {
   date: string;
   activity: string;
   environment: string;
-  observations: Record<number, Observation>; // Mapa por ID de item
+  conclusion?: string; // Nuevo campo
+  observations: Record<number, Observation>;
 }
 
 interface VQState {
@@ -26,6 +27,7 @@ interface VQState {
   createSession: (activity: string, environment: string) => void;
   updateObservation: (itemId: number, score: VQScore) => void;
   updateNote: (itemId: number, note: string) => void;
+  updateConclusion: (text: string) => void; // Nueva acción
   deleteSession: (id: string) => void;
   setActiveSession: (id: string | null) => void;
 }
@@ -42,6 +44,7 @@ export const useVQStore = create<VQState>()(
           date: new Date().toISOString(),
           activity,
           environment,
+          conclusion: '', // Inicializar vacío
           observations: {},
         };
         
@@ -70,6 +73,14 @@ export const useVQStore = create<VQState>()(
             session.observations[itemId] = { itemId, score: null, note: '' };
           }
           session.observations[itemId].note = note;
+        }
+      })),
+
+      updateConclusion: (text) => set(produce((state: VQState) => {
+        if (!state.activeSessionId) return;
+        const session = state.sessions.find(s => s.id === state.activeSessionId);
+        if (session) {
+          session.conclusion = text;
         }
       })),
 
