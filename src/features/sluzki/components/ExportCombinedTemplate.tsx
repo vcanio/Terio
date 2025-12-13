@@ -86,7 +86,7 @@ export const ExportCombinedTemplate = ({ nodes, edges, centerName }: ExportCombi
                                 key={node.id}
                                 style={{ left: node.x + 500, top: node.y + 500 }}
                                 className={`
-                                    absolute w-16 h-16 -translate-x-1/2 -translate-y-1/2 z-20 
+                                    absolute w-12 h-12 -translate-x-1/2 -translate-y-1/2 z-20 
                                     rounded-full flex flex-col items-center justify-center 
                                     border-4 shadow-lg bg-white ${style.border}
                                 `}
