@@ -2,12 +2,15 @@
 
 import React, { useState, useRef, useCallback } from "react";
 import { Info, Loader2 } from "lucide-react"; 
-import { TransformWrapper, TransformComponent, ReactZoomPanPinchRef } from "react-zoom-pan-pinch";
+import { ReactZoomPanPinchRef } from "react-zoom-pan-pinch";
 
+// Hooks
 import { useSluzkiBoard } from "@/features/sluzki/hooks/useSluzkiBoard";
 import { useSluzkiStore } from "@/features/sluzki/store/useSluzkiStore";
 import { useBoardResponsive } from "@/features/sluzki/hooks/useBoardResponsive";
 
+// Componentes
+import { ZoomableCanvas } from "./ZoomableCanvas"; // <--- NUEVO IMPORT
 import { DraggableNode } from "@/features/sluzki/components/DraggableNode";
 import { AddNodeModal } from "@/features/sluzki/components/AddNodeModal";
 import { BoardBackground } from "@/features/sluzki/components/BoardBackground";
@@ -15,20 +18,19 @@ import { BoardToolbar } from "@/features/sluzki/components/BoardToolbar";
 import { EditSidebar } from "@/features/sluzki/components/EditSidebar";
 import { ConnectionLayer } from "@/features/sluzki/components/ConnectionLayer";
 import { BoardLegend } from "@/features/sluzki/components/BoardLegend";
-import { ExportTableTemplate } from "@/features/sluzki/components/ExportTableTemplate";
-import { ExportCombinedTemplate } from "@/features/sluzki/components/ExportCombinedTemplate";
 import { DownloadModal } from "@/features/sluzki/components/DownloadModal";
 import { Modal } from "@/components/ui/Modal";
+
+// Templates de Exportación (Ocultos)
+import { ExportTableTemplate } from "@/features/sluzki/components/ExportTableTemplate";
+import { ExportCombinedTemplate } from "@/features/sluzki/components/ExportCombinedTemplate";
 
 export default function SluzkiBoard() {
   const containerRef = useRef<HTMLDivElement>(null);
   const diagramRef = useRef<HTMLDivElement>(null);
-  // Ref para el mapa, aunque ahora el zoom del mapa es solo con rueda/gestos
   const transformComponentRef = useRef<ReactZoomPanPinchRef>(null); 
   
-  // Recuperamos el estado y la acción para escalar NODOS
   const { nodeScale, setNodeScale } = useSluzkiStore(); 
-
   const { scale: initialScale, BOARD_SIZE } = useBoardResponsive(containerRef);
 
   const {
@@ -41,15 +43,14 @@ export default function SluzkiBoard() {
     clearBoard, isLoaded, isExporting,
   } = useSluzkiBoard(diagramRef, containerRef, initialScale || 1);
 
+  // Gestión de Modales
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isListOpen, setIsListOpen] = useState(false);
   const [showLegend, setShowLegend] = useState(true);
   const [isClearModalOpen, setIsClearModalOpen] = useState(false);
   const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
   
-  // Estado para saber si estamos "dentro" del mapa (Zoom > inicial)
-  const [isZoomed, setIsZoomed] = useState(false);
-
+  // Utilidad para convertir coordenadas de pantalla a tablero
   const screenToBoard = useCallback((screenX: number, screenY: number) => {
     if (!diagramRef.current) return { x: 0, y: 0 };
     const rect = diagramRef.current.getBoundingClientRect();
@@ -64,16 +65,9 @@ export default function SluzkiBoard() {
 
   const sourcePos = sourceId ? getNodePos(sourceId) : { x: 0, y: 0 };
 
-  // --- LÓGICA RESTAURADA: ZOOM DE NODOS ---
   const handleNodeScale = (delta: number) => {
-    // Limitamos el tamaño de los nodos entre 0.4x y 1.5x
     const newScale = Math.min(Math.max(nodeScale + delta, 0.4), 1.5);
     setNodeScale(newScale);
-  };
-
-  const handleConfirmClear = () => {
-    clearBoard();
-    setIsClearModalOpen(false);
   };
 
   if (!isLoaded) {
@@ -86,7 +80,7 @@ export default function SluzkiBoard() {
       onMouseMove={handleMouseMove}
       className={`w-full h-dvh relative bg-slate-50 flex items-center justify-center overflow-hidden pb-48 md:pb-0 ${isConnecting ? "cursor-crosshair" : ""}`}
     >
-      {/* Elementos ocultos para exportación */}
+      {/* --- Templates Ocultos para Exportación --- */}
       <div className="fixed top-0 -left-[9999px] overflow-hidden pointer-events-none z-0">
         <div ref={tableRef}>
           <ExportTableTemplate nodes={nodes} centerName={centerName} />
@@ -96,6 +90,7 @@ export default function SluzkiBoard() {
         </div>
       </div>
 
+      {/* --- UI Tools --- */}
       <BoardToolbar
         onOpenModal={() => setIsModalOpen(true)}
         onToggleConnect={() => { setIsConnecting(!isConnecting); setSourceId(null); }}
@@ -107,11 +102,9 @@ export default function SluzkiBoard() {
         onOpenDownloadModal={() => setIsDownloadModalOpen(true)}
         isExporting={isExporting}
         onClear={() => setIsClearModalOpen(true)}
-        
-        // --- CAMBIO: Conectamos de nuevo al escalado de NODOS ---
         onZoomIn={() => handleNodeScale(0.1)}
         onZoomOut={() => handleNodeScale(-0.1)}
-        currentScale={nodeScale} // Mostramos el % real de los nodos
+        currentScale={nodeScale}
       />
 
       <BoardLegend nodes={nodes} show={showLegend} />
@@ -126,91 +119,54 @@ export default function SluzkiBoard() {
         deleteNode={deleteNode}
       />
 
-      {/* Esperamos a tener la escala inicial calculada */}
+      {/* --- LIENZO PRINCIPAL --- */}
       {initialScale === null ? (
         <div className="flex items-center justify-center h-full w-full opacity-0 animate-pulse">
            <Loader2 className="animate-spin text-slate-300" />
         </div>
       ) : (
-        <TransformWrapper
-          ref={transformComponentRef}
+        <ZoomableCanvas
           initialScale={initialScale}
-          minScale={initialScale} // Tope de alejamiento = estado inicial
-          maxScale={4}
-          centerOnInit={true}
-          limitToBounds={true}
-          centerZoomedOut={true}
-          wheel={{ step: 0.1 }}
-          disabled={isConnecting}
-          
-          // Bloqueamos el panning si estamos en el zoom inicial (vista completa)
-          // También evitamos que arrastrar un nodo mueva el mapa (clase nopan-node)
-          panning={{ 
-            disabled: !isZoomed, 
-            excluded: ["nopan-node"] 
-          }}
-          
-          onTransformed={(e) => {
-             // Permitimos mover el mapa solo si hemos hecho algo de zoom hacia adentro
-             // Usamos un pequeño margen de error (epsilon) para comparaciones flotantes
-             setIsZoomed(e.state.scale > initialScale + 0.001);
-          }}
-
-          // CORRECCIÓN BUG: Usamos e.centerView directamente
-          onZoomStop={(e) => {
-             if (e.state.scale <= initialScale + 0.01) {
-                e.centerView(initialScale, 300, "easeOut");
-             }
-          }}
+          width={BOARD_SIZE}
+          height={BOARD_SIZE}
+          isDisabled={isConnecting}
+          transformRef={transformComponentRef}
+          canvasRef={diagramRef}
         >
-          <TransformComponent
-            wrapperStyle={{ width: "100%", height: "100%" }}
-            wrapperClass="w-full h-full"
-            contentClass="w-full h-full flex items-center justify-center"
-          >
-            <div
-              ref={diagramRef}
-              style={{
-                width: BOARD_SIZE,
-                height: BOARD_SIZE,
-              }}
-              className="relative shadow-2xl rounded-full bg-white shrink-0"
-            >
-              <BoardBackground />
-              <div className="absolute top-1/2 left-1/2 w-0 h-0 overflow-visible z-10">
-                <ConnectionLayer
-                  edges={edges}
-                  nodes={nodes}
-                  isConnecting={isConnecting}
-                  sourceId={sourceId}
-                  sourcePos={sourcePos}
-                  mousePos={mousePos}
-                  centerName={centerName}
-                  isExporting={isExporting}
-                  getNodePos={getNodePos}
-                  deleteEdge={deleteEdge}
-                  onCenterClick={() => handleNodeClick("center")}
-                />
-                {nodes.map((node, index) => (
-                  <DraggableNode
-                    key={node.id}
-                    node={node}
-                    displayNumber={index + 1}
-                    onDrag={onNodeDrag}
-                    onClick={() => handleNodeClick(node.id)}
-                    isTarget={isConnecting && sourceId === node.id}
-                    isSelected={sourceId === node.id}
-                    scale={nodeScale} // Pasamos la escala de nodos correcta
-                    screenToBoard={screenToBoard}
-                    isConnecting={isConnecting}
-                  />
-                ))}
-              </div>
-            </div>
-          </TransformComponent>
-        </TransformWrapper>
+          <BoardBackground />
+          <div className="absolute top-1/2 left-1/2 w-0 h-0 overflow-visible z-10">
+            <ConnectionLayer
+              edges={edges}
+              nodes={nodes}
+              isConnecting={isConnecting}
+              sourceId={sourceId}
+              sourcePos={sourcePos}
+              mousePos={mousePos}
+              centerName={centerName}
+              isExporting={isExporting}
+              getNodePos={getNodePos}
+              deleteEdge={deleteEdge}
+              onCenterClick={() => handleNodeClick("center")}
+            />
+            {nodes.map((node, index) => (
+              <DraggableNode
+                key={node.id}
+                node={node}
+                displayNumber={index + 1}
+                onDrag={onNodeDrag}
+                onClick={() => handleNodeClick(node.id)}
+                isTarget={isConnecting && sourceId === node.id}
+                isSelected={sourceId === node.id}
+                scale={nodeScale}
+                screenToBoard={screenToBoard}
+                isConnecting={isConnecting}
+              />
+            ))}
+          </div>
+        </ZoomableCanvas>
       )}
 
+      {/* --- Indicador Flotante de Conexión --- */}
       {isConnecting && (
         <div className="exclude-from-export absolute top-24 md:bottom-8 md:top-auto bg-slate-900/90 backdrop-blur text-white px-5 py-3 rounded-full shadow-2xl text-sm font-medium flex gap-3 items-center pointer-events-none animate-in fade-in slide-in-from-top-4 md:slide-in-from-bottom-4 z-50 border border-white/10">
           <Info size={18} className="text-blue-400 animate-pulse" />
@@ -225,6 +181,7 @@ export default function SluzkiBoard() {
         </div>
       )}
 
+      {/* --- MODALES --- */}
       <AddNodeModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -243,7 +200,7 @@ export default function SluzkiBoard() {
           </div>
           <div className="flex gap-3 justify-end">
             <button onClick={() => setIsClearModalOpen(false)} className="px-4 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors">Cancelar</button>
-            <button onClick={handleConfirmClear} className="px-4 py-2.5 text-sm font-bold text-white bg-red-500 hover:bg-red-600 rounded-xl transition-all shadow-md shadow-red-500/20 active:scale-95">Sí, reiniciar todo</button>
+            <button onClick={() => { clearBoard(); setIsClearModalOpen(false); }} className="px-4 py-2.5 text-sm font-bold text-white bg-red-500 hover:bg-red-600 rounded-xl transition-all shadow-md shadow-red-500/20 active:scale-95">Sí, reiniciar todo</button>
           </div>
         </div>
       </Modal>

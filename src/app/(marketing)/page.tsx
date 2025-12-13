@@ -43,10 +43,10 @@ export default function LandingPage() {
           </div>
           <div className="flex gap-4">
             {/* Este botón lleva a la app actual */}
-            <Link href="/tools/sluzki" className="text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors">
+            <Link href="/dashboard" className="text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors">
               Herramientas
             </Link>
-            <Link href="/tools/sluzki" className="text-sm font-bold text-blue-600 hover:text-blue-700 transition-colors">
+            <Link href="/dashboard" className="text-sm font-bold text-blue-600 hover:text-blue-700 transition-colors">
               Ingresar
             </Link>
           </div>
