@@ -66,17 +66,55 @@ export const VQReport = ({ sessionId, onClose }: VQReportProps) => {
               </div>
             </div>
 
-            {/* TABLA CORREGIDA */}
-            <table className="w-full border-collapse border-2 border-slate-800 text-sm">
+            {/* --- NUEVO: Gráfico de Perfil Volitivo --- */}
+            <div className="mb-8 break-inside-avoid">
+                <h3 className="text-sm font-bold uppercase border-b border-slate-200 mb-4 pb-1 text-slate-500">Perfil Volitivo</h3>
+                <div className="grid grid-cols-3 gap-6">
+                {VQ_GROUPS.map(group => {
+                    // Calculamos puntaje real vs ideal
+                    const groupItems = group.items.map(i => i.id);
+                    // Sumamos score (si es null asumimos 0)
+                    const totalScore = groupItems.reduce((acc, id) => acc + (session.observations[id]?.score || 0), 0);
+                    const maxScore = groupItems.length * 4; // 4 es el puntaje máximo (E)
+                    
+                    // Porcentaje seguro
+                    const percentage = maxScore > 0 ? Math.round((totalScore / maxScore) * 100) : 0;
+                    
+                    // Semáforo clínico
+                    let barColor = "bg-red-500";
+                    if (percentage > 50) barColor = "bg-orange-400";
+                    if (percentage > 70) barColor = "bg-blue-500";
+                    if (percentage > 85) barColor = "bg-emerald-500";
+
+                    return (
+                    <div key={group.name} className="border border-slate-200 p-4 rounded-lg bg-slate-50 print:bg-white print:border-slate-300">
+                        <div className="flex justify-between items-baseline mb-2">
+                            <span className="text-xs font-black uppercase text-slate-600">{group.name}</span>
+                            <span className="text-lg font-bold text-slate-800">{percentage}%</span>
+                        </div>
+                        <div className="h-3 w-full bg-slate-200 rounded-full overflow-hidden print:border print:border-slate-300">
+                             {/* Usamos !important en print para forzar color oscuro si la impresora es B/N */}
+                            <div style={{ width: `${percentage}%` }} className={`h-full ${barColor} print:bg-slate-600! transition-all duration-500`}></div> 
+                        </div>
+                        <div className="text-[10px] text-slate-400 mt-1 text-right">
+                             {totalScore} / {maxScore} pts
+                        </div>
+                    </div>
+                    )
+                })}
+                </div>
+            </div>
+
+            {/* TABLA DE RESULTADOS */}
+            <table className="w-full border-collapse border-2 border-slate-800 text-sm mb-6">
               <thead>
                 <tr>
-                  {/* CAMBIO 1: Usamos 'writing-mode: vertical-rl' y rotate-180 en lugar de -rotate-90 */}
-                  <th className="border border-slate-800 bg-slate-100 p-2 w-12 text-center [writing-mode:vertical-rl] rotate-180 whitespace-nowrap h-32 align-middle">PROCESO</th>
-                  <th className="border border-slate-800 bg-slate-100 p-2 text-left align-middle">DIMENSIONES / ÍTEMS</th>
-                  <th className="border border-slate-800 p-1 w-8 text-center bg-red-50 align-middle">P</th>
-                  <th className="border border-slate-800 p-1 w-8 text-center bg-orange-50 align-middle">D</th>
-                  <th className="border border-slate-800 p-1 w-8 text-center bg-blue-50 align-middle">I</th>
-                  <th className="border border-slate-800 p-1 w-8 text-center bg-emerald-50 align-middle">E</th>
+                  <th className="border border-slate-800 bg-slate-100 p-2 w-12 text-center [writing-mode:vertical-rl] rotate-180 whitespace-nowrap h-32 align-middle text-xs font-bold uppercase">PROCESO</th>
+                  <th className="border border-slate-800 bg-slate-100 p-2 text-left align-middle font-bold uppercase">DIMENSIONES / ÍTEMS</th>
+                  <th className="border border-slate-800 p-1 w-8 text-center bg-red-50 align-middle font-bold">P</th>
+                  <th className="border border-slate-800 p-1 w-8 text-center bg-orange-50 align-middle font-bold">D</th>
+                  <th className="border border-slate-800 p-1 w-8 text-center bg-blue-50 align-middle font-bold">I</th>
+                  <th className="border border-slate-800 p-1 w-8 text-center bg-emerald-50 align-middle font-bold">E</th>
                 </tr>
               </thead>
               <tbody>
@@ -90,21 +128,19 @@ export const VQReport = ({ sessionId, onClose }: VQReportProps) => {
                           {index === 0 && (
                             <td 
                               rowSpan={group.items.length} 
-                              // CAMBIO 2: Aplicamos la misma corrección de rotación y aumentamos el ancho a w-12
-                              className="border border-slate-800 p-2 text-center font-bold uppercase [writing-mode:vertical-rl] rotate-180 whitespace-nowrap w-12 bg-slate-50 text-xs align-middle"
+                              className="border border-slate-800 p-2 text-center font-bold uppercase [writing-mode:vertical-rl] rotate-180 whitespace-nowrap w-12 bg-slate-50 text-[10px] align-middle"
                             >
                               {group.name}
                             </td>
                           )}
                           
-                          {/* CAMBIO 3: Aumentamos padding izquierdo (pl-4) para evitar cualquier solapamiento residual */}
                           <td className="border border-slate-800 p-2 pl-4">{item.text}</td>
                           
                           {/* Celdas de Puntuación */}
                           {[1, 2, 3, 4].map((colScore) => (
                             <td key={colScore} className="border border-slate-800 p-0 text-center align-middle">
                               {score === colScore && (
-                                <div className="w-full h-full flex items-center justify-center font-bold text-lg text-slate-900 bg-slate-200 print:bg-transparent">
+                                <div className="w-full h-full flex items-center justify-center font-black text-lg text-slate-900 bg-slate-200 print:bg-slate-300">
                                   X
                                 </div>
                               )}
@@ -120,37 +156,50 @@ export const VQReport = ({ sessionId, onClose }: VQReportProps) => {
 
             {/* Sección Notas */}
             <div className="mt-8 break-inside-avoid">
-              <h3 className="font-bold border-b border-slate-800 mb-2">NOTAS POR ÍTEM</h3>
-              <div className="border border-slate-800 min-h-[100px] p-2 text-sm whitespace-pre-wrap">
-                {Object.values(session.observations)
-                  .filter(o => o.note)
-                  .map(o => {
-                    const itemText = VQ_GROUPS.flatMap(g => g.items).find(i => i.id === o.itemId)?.text;
-                    return `• [${itemText}]: ${o.note}\n`;
-                  })}
-                 {Object.values(session.observations).every(o => !o.note) && <span className="text-slate-400 italic">Sin notas específicas registradas.</span>}
+              <h3 className="font-bold border-b border-slate-800 mb-2 bg-slate-100 p-1 pl-2 text-xs uppercase">Notas de Observación</h3>
+              <div className="border border-slate-800 min-h-20 p-4 text-sm whitespace-pre-wrap bg-white">
+                {Object.values(session.observations).some(o => o.note) ? (
+                    Object.values(session.observations)
+                    .filter(o => o.note)
+                    .map(o => {
+                        const itemText = VQ_GROUPS.flatMap(g => g.items).find(i => i.id === o.itemId)?.text;
+                        return (
+                            <div key={o.itemId} className="mb-2">
+                                <span className="font-bold mr-2">• {itemText}:</span>
+                                <span>{o.note}</span>
+                            </div>
+                        );
+                    })
+                ) : (
+                    <span className="text-slate-400 italic">Sin notas específicas registradas.</span>
+                )}
               </div>
             </div>
 
             {/* Sección Conclusión */}
-            {session.conclusion && (
-              <div className="mt-6 break-inside-avoid">
-                <h3 className="font-bold border-b border-slate-800 mb-2 bg-slate-50 p-1 pl-2">CONCLUSIÓN Y SUGERENCIAS</h3>
-                <div className="border border-slate-800 min-h-[100px] p-4 text-sm whitespace-pre-wrap leading-relaxed">
-                  {session.conclusion}
+            <div className="mt-6 break-inside-avoid">
+                <h3 className="font-bold border-b border-slate-800 mb-2 bg-slate-100 p-1 pl-2 text-xs uppercase">Conclusión y Sugerencias</h3>
+                <div className="border border-slate-800 min-h-[120px] p-4 text-sm whitespace-pre-wrap leading-relaxed bg-white">
+                  {session.conclusion || <span className="text-slate-400 italic">Sin conclusiones registradas.</span>}
                 </div>
-              </div>
-            )}
+            </div>
 
-            {/* Claves */}
-            <div className="mt-6 border border-slate-800 w-64 text-xs break-inside-avoid">
-              <div className="font-bold border-b border-slate-800 p-1 bg-slate-100 text-center">CLAVES</div>
-              <div className="p-2 space-y-1">
-                <div>P: Pasivo</div>
-                <div>D: Dudoso</div>
-                <div>I: Involucrado</div>
-                <div>E: Espontáneo</div>
-              </div>
+            {/* Footer con Claves y Firma */}
+            <div className="mt-8 flex justify-between items-end break-inside-avoid">
+                <div className="border border-slate-800 text-xs w-48">
+                    <div className="font-bold border-b border-slate-800 p-1 bg-slate-100 text-center uppercase">Claves</div>
+                    <div className="p-2 space-y-1">
+                        <div><strong>P:</strong> Pasivo (1)</div>
+                        <div><strong>D:</strong> Dudoso (2)</div>
+                        <div><strong>I:</strong> Involucrado (3)</div>
+                        <div><strong>E:</strong> Espontáneo (4)</div>
+                    </div>
+                </div>
+                
+                <div className="text-center w-64">
+                    <div className="border-b border-slate-800 h-10"></div>
+                    <p className="text-sm font-bold mt-2">Firma Terapeuta Ocupacional</p>
+                </div>
             </div>
 
           </div>
