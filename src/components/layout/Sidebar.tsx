@@ -15,6 +15,7 @@ interface SidebarProps {
 const menuItems = [
   { name: 'Inicio', href: '/dashboard', icon: LayoutDashboard, hidden: false },
   { name: 'Mapa de Red', href: '/tools/sluzki', icon: Network },
+  { name: 'Escala OSA', href: '/tools/osa', icon: ClipboardCheck, hidden: false },
   { name: 'OPHI-II', href: '/tools/ophi', icon: Network, hidden: true },
   { name: 'Cuestionario Volitivo', href: '/tools/vq', icon: ClipboardCheck, hidden: false },
 ];
