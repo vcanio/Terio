@@ -152,10 +152,16 @@ export default function SluzkiBoard() {
           
           onTransformed={(e) => {
              // Permitimos mover el mapa solo si hemos hecho algo de zoom hacia adentro
+             // Usamos un pequeño margen de error (epsilon) para comparaciones flotantes
              setIsZoomed(e.state.scale > initialScale + 0.001);
           }}
-          
-          alignmentAnimation={{ sizeX: 0, sizeY: 0 }}
+
+          // CORRECCIÓN BUG: Usamos e.centerView directamente
+          onZoomStop={(e) => {
+             if (e.state.scale <= initialScale + 0.01) {
+                e.centerView(initialScale, 300, "easeOut");
+             }
+          }}
         >
           <TransformComponent
             wrapperStyle={{ width: "100%", height: "100%" }}
