@@ -1,7 +1,8 @@
-import { useState, useRef, useCallback, useEffect, RefObject } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { toPng } from "html-to-image";
 import toast from "react-hot-toast"; 
 import { useSluzkiStore } from "../store/useSluzkiStore";
+import { useClinicalUserStore } from "@/features/users/store/useClinicalStore"; // Importamos store de usuarios
 import { LEVELS, THEME } from "../utils/constants";
 
 type ToPngOptions = Parameters<typeof toPng>[1];
@@ -14,12 +15,23 @@ export const useSluzkiBoard = (
   const tableRef = useRef<HTMLDivElement>(null);
   const combinedRef = useRef<HTMLDivElement>(null);
   
+  // Obtenemos usuario activo y función de guardado
+  const { activeUserId } = useClinicalUserStore();
   const { 
     nodes, edges, centerName, 
     setCenterName, addNode, deleteNode, 
     updateNodeName, updateNodePosition, updateNodeLevel,
-    addEdge, deleteEdge, clearBoard 
+    addEdge, deleteEdge, clearBoard,
+    saveUserMap 
   } = useSluzkiStore();
+
+  // === AUTO-GUARDADO ===
+  // Cada vez que cambia algo en el mapa, lo guardamos en el registro del usuario activo
+  useEffect(() => {
+    if (activeUserId) {
+      saveUserMap(activeUserId);
+    }
+  }, [nodes, edges, centerName, activeUserId, saveUserMap]);
 
   const [isExporting, setIsExporting] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
@@ -65,21 +77,17 @@ export const useSluzkiBoard = (
         const rect = diagramRef.current.getBoundingClientRect();
         const centerX = rect.left + rect.width / 2;
         const centerY = rect.top + rect.height / 2;
-        
         const currentScale = rect.width / 1000;
-
         setMousePos({
           x: (e.clientX - centerX) / currentScale,
           y: (e.clientY - centerY) / currentScale,
         });
         return;
       }
-
       if (containerRef.current) {
         const rect = containerRef.current.getBoundingClientRect();
         const centerX = rect.width / 2;
         const centerY = rect.height / 2;
-        
         setMousePos({
           x: (e.clientX - rect.left - centerX) / scale,
           y: (e.clientY - rect.top - centerY) / scale,
@@ -156,24 +164,18 @@ export const useSluzkiBoard = (
     const exportTask = new Promise<void>(async (resolve, reject) => {
       try {
         await new Promise((r) => setTimeout(r, 500));
-        
         let options: ToPngOptions = {
           cacheBust: true, pixelRatio: 2, backgroundColor: "#f8fafc",
           filter: (node: Node) => !(node instanceof Element && node.classList.contains("exclude-from-export")),
         };
-
         if (targetElement === diagramRef?.current) {
              options = { 
                  ...options, 
                  width: 1000, 
                  height: 1000, 
-                 style: { 
-                     transform: 'scale(1)', 
-                     transformOrigin: 'top left' 
-                 } 
+                 style: { transform: 'scale(1)', transformOrigin: 'top left' } 
              };
         }
-
         const dataUrl = await toPng(targetElement as HTMLElement, options);
         const link = document.createElement("a");
         link.download = `mapa-sluzki-${new Date().toISOString().slice(0,10)}.png`;
@@ -188,35 +190,19 @@ export const useSluzkiBoard = (
   const downloadCombinedImage = useCallback(async () => {
     const combinedElement = combinedRef.current;
     if (!combinedElement) return;
-
     const exportTask = new Promise<void>(async (resolve, reject) => {
       try {
         setIsExporting(true);
         await new Promise((r) => setTimeout(r, 100)); 
-        
-        const dataUrl = await toPng(combinedElement, { 
-          cacheBust: true, 
-          pixelRatio: 2, 
-          backgroundColor: "#ffffff" 
-        });
-        
+        const dataUrl = await toPng(combinedElement, { cacheBust: true, pixelRatio: 2, backgroundColor: "#ffffff" });
         const link = document.createElement("a");
         link.download = `reporte-completo-${new Date().toISOString().slice(0,10)}.png`;
         link.href = dataUrl;
         link.click();
         resolve();
-      } catch (err) {
-        console.error(err); reject(err);
-      } finally {
-        setIsExporting(false);
-      }
+      } catch (err) { console.error(err); reject(err); } finally { setIsExporting(false); }
     });
-
-    toast.promise(exportTask, { 
-        loading: 'Creando reporte completo...', 
-        success: '¡Reporte listo!', 
-        error: 'Error al crear reporte' 
-    });
+    toast.promise(exportTask, { loading: 'Creando reporte...', success: '¡Reporte listo!', error: 'Error al crear reporte' });
   }, [combinedRef]);
 
   return {
@@ -227,10 +213,7 @@ export const useSluzkiBoard = (
     addNode, deleteNode, clearBoard, deleteEdge,
     updateNodeName, onNodeDrag, handleNodeClick, 
     handleMouseMove, getNodePos,
-    downloadImage,
-    downloadTable,
-    downloadTableImage,
-    downloadCombinedImage,
+    downloadImage, downloadTable, downloadTableImage, downloadCombinedImage,
     isExporting, 
   };
 };

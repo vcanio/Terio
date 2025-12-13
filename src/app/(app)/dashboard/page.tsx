@@ -1,159 +1,193 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { 
-  Network, 
-  Users, 
-  Calendar, 
-  FileText, 
-  Activity, 
-  Clock,
-  ArrowRight
-} from "lucide-react";
+import { useClinicalUserStore } from "@/features/users/store/useClinicalStore";
+import { useSluzkiStore } from "@/features/sluzki/store/useSluzkiStore";
+import { Users, Plus, ChevronRight, User } from "lucide-react";
+import { Modal } from "@/components/ui/Modal";
 
-export default function Home() {
-  return (
-    <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-8 h-full overflow-y-auto custom-scrollbar">
+export default function Dashboard() {
+  const { users, activeUserId, addUser, setActiveUser } = useClinicalUserStore();
+  const { loadUserMap, setCenterName } = useSluzkiStore();
+  
+  const [isNewUserModal, setIsNewUserModal] = useState(false);
+  const [newUserName, setNewUserName] = useState("");
+
+  // Efecto: Cuando cambia el usuario activo, cargamos su mapa automáticamente
+  useEffect(() => {
+    if (activeUserId) {
+      loadUserMap(activeUserId);
       
-      {/* 1. HEADER DE BIENVENIDA */}
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
-            Hola, Terapeuta 👋
-          </h1>
-          <p className="text-slate-500 mt-1 text-lg">
-            Aquí tienes el resumen de tu actividad hoy.
-          </p>
-        </div>
-        <div className="text-sm font-medium text-slate-500 bg-white px-4 py-2 rounded-full shadow-sm border border-slate-200 flex items-center gap-2">
-          <Clock size={16} className="text-blue-500" />
-          <span>{new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
-        </div>
-      </header>
+      // Opcional: Sincronizar el nombre central del mapa con el nombre del usuario
+      const currentUser = users.find(u => u.id === activeUserId);
+      if (currentUser) {
+        setCenterName(currentUser.name);
+      }
+    }
+  }, [activeUserId, loadUserMap, setCenterName, users]);
 
-      {/* 2. TARJETAS DE ESTADÍSTICAS (MOCKUP) */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <StatCard 
-          icon={Users} 
-          label="Pacientes Activos" 
-          value="12" 
-          trend="+2 este mes" 
-          color="blue"
-        />
-        <StatCard 
-          icon={Calendar} 
-          label="Citas para Hoy" 
-          value="4" 
-          trend="Próxima: 14:00" 
-          color="emerald"
-        />
-        <StatCard 
-          icon={Activity} 
-          label="Evaluaciones" 
-          value="8" 
-          trend="Pendientes de revisión" 
-          color="amber"
-        />
-      </div>
-
-      {/* 3. ACCESOS RÁPIDOS A HERRAMIENTAS */}
-      <section>
-        <h2 className="text-xl font-bold text-slate-800 mb-5 flex items-center gap-2">
-          <Network size={20} className="text-slate-400" /> Herramientas Clínicas
-        </h2>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          
-          {/* TARJETA ACTIVA: MAPA DE SLUZKI */}
-          <Link href="/tools/sluzki" className="group relative bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-xl hover:border-blue-200 transition-all duration-300 overflow-hidden">
-            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-              <Network size={80} className="text-blue-600" />
-            </div>
-            
-            <div className="relative z-10">
-              <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                <Network size={24} />
-              </div>
-              <h3 className="text-lg font-bold text-slate-900 mb-1">Mapa de Red (Sluzki)</h3>
-              <p className="text-slate-500 text-sm mb-4 line-clamp-2">
-                Grafica y analiza las redes sociales personales de tus pacientes según el modelo de Sluzki.
-              </p>
-              <span className="text-blue-600 text-sm font-bold flex items-center gap-1 group-hover:gap-2 transition-all">
-                Abrir herramienta <ArrowRight size={16} />
-              </span>
-            </div>
-          </Link>
-
-          {/* TARJETA PRÓXIMAMENTE: EVALUACIONES */}
-          <div className="group relative bg-slate-50 p-6 rounded-2xl border border-slate-200 border-dashed opacity-70">
-            <div className="w-12 h-12 bg-slate-200 text-slate-400 rounded-xl flex items-center justify-center mb-4">
-              <FileText size={24} />
-            </div>
-            <h3 className="text-lg font-bold text-slate-700 mb-1">Evaluaciones (Pronto)</h3>
-            <p className="text-slate-400 text-sm">
-              Generación de informes y baterías de evaluación estandarizadas.
-            </p>
-          </div>
-
-           {/* TARJETA PRÓXIMAMENTE: PACIENTES */}
-           <div className="group relative bg-slate-50 p-6 rounded-2xl border border-slate-200 border-dashed opacity-70">
-            <div className="w-12 h-12 bg-slate-200 text-slate-400 rounded-xl flex items-center justify-center mb-4">
-              <Users size={24} />
-            </div>
-            <h3 className="text-lg font-bold text-slate-700 mb-1">Fichas Clínicas (Pronto)</h3>
-            <p className="text-slate-400 text-sm">
-              Gestión centralizada de historias clínicas y antecedentes.
-            </p>
-          </div>
-
-        </div>
-      </section>
-
-      {/* 4. LISTA DE ACTIVIDAD RECIENTE (MOCKUP) */}
-      <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-        <h2 className="text-lg font-bold text-slate-800 mb-4">Actividad Reciente</h2>
-        <div className="space-y-4">
-          {[1, 2, 3].map((_, i) => (
-            <div key={i} className="flex items-center justify-between py-3 border-b border-slate-50 last:border-0 last:pb-0">
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-bold text-xs">
-                  JP
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-slate-900">Juan Pérez - Mapa de Red actualizado</p>
-                  <p className="text-xs text-slate-400">Hace 2 horas • Red Familiar</p>
-                </div>
-              </div>
-              <button className="text-slate-400 hover:text-slate-600 transition-colors">
-                <ArrowRight size={16} />
-              </button>
-            </div>
-          ))}
-        </div>
-      </section>
-
-    </div>
-  );
-}
-
-// Componente auxiliar para las tarjetas de estadísticas
-function StatCard({ icon: Icon, label, value, trend, color }: any) {
-  const colors: any = {
-    blue: "bg-blue-50 text-blue-600",
-    emerald: "bg-emerald-50 text-emerald-600",
-    amber: "bg-amber-50 text-amber-600",
+  const handleCreateUser = (e: React.FormEvent) => {
+    e.preventDefault();
+    if(!newUserName) return;
+    addUser({ name: newUserName, diagnosis: "Ingreso" });
+    setIsNewUserModal(false);
+    setNewUserName("");
   };
 
+  const activeUser = users.find(u => u.id === activeUserId);
+
   return (
-    <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
-      <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${colors[color]}`}>
-        <Icon size={24} />
-      </div>
-      <div>
-        <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">{label}</p>
-        <div className="flex items-baseline gap-2">
-          <span className="text-2xl font-bold text-slate-900">{value}</span>
-          <span className="text-xs font-medium text-slate-500">{trend}</span>
+    <div className="p-6 max-w-7xl mx-auto space-y-8 h-full overflow-y-auto custom-scrollbar">
+      
+      {/* 1. HEADER */}
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Mis Usuarios</h1>
+          <p className="text-slate-500">Gestión de casos y expedientes clínicos</p>
         </div>
+        <button 
+          onClick={() => setIsNewUserModal(true)}
+          className="bg-slate-900 text-white px-4 py-2.5 rounded-xl flex items-center gap-2 hover:bg-slate-800 transition-all shadow-lg shadow-slate-900/20 active:scale-95 font-medium"
+        >
+          <Plus size={20} /> Nuevo Usuario
+        </button>
+      </header>
+
+      {/* 2. CONTEXTO: USUARIO ACTIVO */}
+      {activeUser ? (
+        <div className="bg-blue-50 border border-blue-200 p-5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-in fade-in slide-in-from-top-2 shadow-sm">
+            <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-white text-blue-600 rounded-full flex items-center justify-center shadow-sm border border-blue-100 shrink-0">
+                    <User size={24} />
+                </div>
+                <div>
+                    <p className="text-xs font-bold text-blue-600 uppercase tracking-wider mb-0.5">Sesión Actual</p>
+                    <h2 className="text-xl font-bold text-slate-900">{activeUser.name}</h2>
+                    <p className="text-sm text-slate-500">{activeUser.diagnosis}</p>
+                </div>
+            </div>
+            <div className="w-full sm:w-auto text-right">
+                <span className="text-xs text-slate-400 block mb-1">ID: {activeUser.id.slice(0,8)}...</span>
+                <span className="inline-flex items-center px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-bold">
+                    Expediente Abierto
+                </span>
+            </div>
+        </div>
+      ) : (
+        <div className="bg-amber-50 border border-amber-200 p-6 rounded-2xl text-amber-900 flex gap-4 items-center shadow-sm">
+            <div className="text-3xl shrink-0">👈</div>
+            <div>
+                <strong className="block text-lg">Ningún usuario seleccionado.</strong>
+                <p className="opacity-80 text-sm">Selecciona uno de la lista o crea uno nuevo para cargar sus datos en las herramientas.</p>
+            </div>
+        </div>
+      )}
+
+      {/* 3. LISTA DE USUARIOS */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {users.length === 0 && (
+            <div className="col-span-full py-16 text-center bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl">
+                <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Users size={32} className="text-slate-300" />
+                </div>
+                <p className="text-slate-600 font-bold text-lg">No hay usuarios registrados.</p>
+                <p className="text-slate-400 text-sm max-w-xs mx-auto mt-1">Comienza creando tu primer expediente para usar las herramientas clínicas.</p>
+            </div>
+        )}
+        
+        {users.map(user => (
+            <div 
+                key={user.id}
+                onClick={() => setActiveUser(user.id)}
+                className={`
+                    group cursor-pointer p-5 rounded-2xl border transition-all hover:shadow-lg relative overflow-hidden bg-white
+                    ${activeUserId === user.id 
+                        ? 'border-blue-500 ring-2 ring-blue-500 shadow-md z-10' 
+                        : 'border-slate-200 hover:border-blue-300'
+                    }
+                `}
+            >
+                <div className="flex justify-between items-start mb-2">
+                    <h3 className="font-bold text-lg text-slate-800 group-hover:text-blue-600 transition-colors line-clamp-1">
+                        {user.name}
+                    </h3>
+                    {activeUserId === user.id && (
+                        <span className="flex h-3 w-3 relative">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-600"></span>
+                        </span>
+                    )}
+                </div>
+                <p className="text-sm text-slate-500 mb-4 line-clamp-1 h-5">{user.diagnosis || "Sin motivo de consulta"}</p>
+                
+                <div className="pt-3 border-t border-slate-100 flex justify-between items-center">
+                    <span className="text-xs text-slate-400 font-medium">
+                        {new Date(user.createdAt).toLocaleDateString()}
+                    </span>
+                    <span className={`text-xs font-bold flex items-center gap-1 transition-colors ${activeUserId === user.id ? 'text-blue-600' : 'text-slate-400 group-hover:text-blue-500'}`}>
+                        {activeUserId === user.id ? 'Seleccionado' : 'Abrir'} <ChevronRight size={14} />
+                    </span>
+                </div>
+            </div>
+        ))}
       </div>
+
+      {/* 4. HERRAMIENTAS DISPONIBLES (Solo si hay usuario activo) */}
+      {activeUserId && (
+          <section className="opacity-100 transition-all duration-500 animate-in fade-in slide-in-from-bottom-4 pt-4 border-t border-slate-100">
+            <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+              Herramientas Clínicas
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Link href="/tools/sluzki" className="p-5 bg-white border border-slate-200 rounded-xl hover:border-blue-400 hover:shadow-lg transition-all group flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm border border-blue-100">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+                    </div>
+                    <div>
+                        <h3 className="font-bold text-slate-800 group-hover:text-blue-600 text-lg">Mapa de Red</h3>
+                        <p className="text-xs text-slate-500 mt-0.5 font-medium">Modelo de Sluzki</p>
+                    </div>
+                    <div className="ml-auto text-slate-300 group-hover:text-blue-500 transition-colors">
+                        <ChevronRight />
+                    </div>
+                </Link>
+                
+                <Link href="/tools/vq" className="p-5 bg-white border border-slate-200 rounded-xl hover:border-emerald-400 hover:shadow-lg transition-all group flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm border border-emerald-100">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15l2 2 4-4"/></svg>
+                    </div>
+                    <div>
+                        <h3 className="font-bold text-slate-800 group-hover:text-emerald-600 text-lg">Cuestionario Volitivo</h3>
+                        <p className="text-xs text-slate-500 mt-0.5 font-medium">Observación VQ</p>
+                    </div>
+                    <div className="ml-auto text-slate-300 group-hover:text-emerald-500 transition-colors">
+                        <ChevronRight />
+                    </div>
+                </Link>
+            </div>
+          </section>
+      )}
+
+      {/* MODAL CREAR USUARIO */}
+      <Modal isOpen={isNewUserModal} onClose={() => setIsNewUserModal(false)} title="Nuevo Usuario">
+        <form onSubmit={handleCreateUser} className="space-y-4">
+            <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Nombre Completo</label>
+                <input 
+                    autoFocus
+                    value={newUserName}
+                    onChange={e => setNewUserName(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:border-blue-500 text-slate-900 placeholder:text-slate-400 text-base"
+                    placeholder="Ej: Juan Pérez"
+                />
+            </div>
+            <button className="w-full bg-slate-900 text-white font-bold py-3 rounded-xl hover:bg-slate-800 shadow-lg shadow-slate-900/10 active:scale-95 transition-all">
+                Crear Expediente
+            </button>
+        </form>
+      </Modal>
+
     </div>
   );
 }

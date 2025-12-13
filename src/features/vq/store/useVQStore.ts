@@ -1,4 +1,3 @@
-// src/features/vq/store/useVQStore.ts
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { produce } from 'immer';
@@ -12,10 +11,11 @@ interface Observation {
 
 interface Session {
   id: string;
+  userId: string; // Foreign Key al Usuario
   date: string;
   activity: string;
   environment: string;
-  conclusion?: string; // Nuevo campo
+  conclusion?: string;
   observations: Record<number, Observation>;
 }
 
@@ -27,7 +27,7 @@ interface VQState {
   createSession: (activity: string, environment: string) => void;
   updateObservation: (itemId: number, score: VQScore) => void;
   updateNote: (itemId: number, note: string) => void;
-  updateConclusion: (text: string) => void; // Nueva acción
+  updateConclusion: (text: string) => void;
   deleteSession: (id: string) => void;
   setActiveSession: (id: string | null) => void;
 }
@@ -39,12 +39,26 @@ export const useVQStore = create<VQState>()(
       activeSessionId: null,
 
       createSession: (activity, environment) => {
+        // Obtenemos ID del usuario activo del otro store via localStorage
+        const userStoreStr = localStorage.getItem('terio-users-db');
+        let currentUserId = "guest";
+        
+        if (userStoreStr) {
+            try {
+                const { state } = JSON.parse(userStoreStr);
+                if (state.activeUserId) currentUserId = state.activeUserId;
+            } catch (e) {
+                console.error("Error leyendo usuario activo", e);
+            }
+        }
+
         const newSession: Session = {
           id: Date.now().toString(),
+          userId: currentUserId, 
           date: new Date().toISOString(),
           activity,
           environment,
-          conclusion: '', // Inicializar vacío
+          conclusion: '',
           observations: {},
         };
         
