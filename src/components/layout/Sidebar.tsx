@@ -9,8 +9,9 @@ interface SidebarProps {
   toggle: () => void;
 }
 
+// ACTUALIZACIÓN: Cambiamos href '/' a '/dashboard' para separar la Landing de la App
 const menuItems = [
-  { name: 'Inicio', href: '/', icon: LayoutDashboard, hidden: false },
+  { name: 'Inicio', href: '/dashboard', icon: LayoutDashboard, hidden: false },
   { name: 'Mapa de Red', href: '/tools/sluzki', icon: Network },
   { name: 'OPHI-II', href: '/tools/ophi', icon: Network, hidden: true },
   { name: 'Cuestionario Volitivo', href: '/tools/vq', icon: ClipboardCheck, hidden: false },
