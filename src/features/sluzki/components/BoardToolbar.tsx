@@ -4,8 +4,8 @@ import {
   Download, 
   RotateCcw, 
   BookOpen, 
-  ZoomIn, 
-  ZoomOut,
+  Maximize, // Nuevo icono para agrandar objeto
+  Minimize, // Nuevo icono para achicar objeto
   Loader2,
   SquarePen
 } from "lucide-react";
@@ -18,7 +18,7 @@ interface BoardToolbarProps {
   showLegend: boolean;
   onToggleList: () => void;
   isListOpen: boolean;
-  onOpenDownloadModal: () => void; // <--- Única función necesaria ahora
+  onOpenDownloadModal: () => void;
   isExporting: boolean;
   onClear: () => void;
   onZoomIn: () => void;
@@ -30,7 +30,7 @@ export const BoardToolbar = ({
   onOpenModal, onToggleConnect, isConnecting,
   onToggleLegend, showLegend, 
   onToggleList, isListOpen,
-  onOpenDownloadModal, // <--- Usamos esta prop
+  onOpenDownloadModal,
   isExporting, onClear,
   onZoomIn, onZoomOut, currentScale
 }: BoardToolbarProps) => {
@@ -61,7 +61,7 @@ export const BoardToolbar = ({
           <SquarePen size={20} />
         </button>
 
-        <button onClick={onToggleConnect} className={`${btnClass} border ${isConnecting ? btnActive + " animate-pulse" : btnInactive}`} title="Conectar">
+        <button onClick={onToggleConnect} className={`${btnClass} border ${isConnecting ? btnActive + " animate-pulse" : btnInactive}`} title="Conectar Nodos">
           <LinkIcon size={20} />
         </button>
         
@@ -71,21 +71,22 @@ export const BoardToolbar = ({
 
         <div className="w-px h-6 bg-slate-200 shrink-0 lg:w-6 lg:h-px"></div>
 
-        <button onClick={onZoomIn} className={btnClass + " " + btnInactive} title="Zoom +">
-          <ZoomIn size={20} />
+        {/* CAMBIO: Iconos de escalado en lugar de lupa */}
+        <button onClick={onZoomIn} className={btnClass + " " + btnInactive} title="Agrandar Nodos">
+          <Maximize size={20} />
         </button>
         
-        <div className="hidden lg:flex items-center justify-center w-8 h-8 text-[9px] font-bold text-slate-400 select-none">
-          {Math.round(currentScale * 100)}%
+        <div className="hidden lg:flex flex-col items-center justify-center w-8 text-center select-none leading-none gap-0.5">
+          <span className="text-[8px] text-slate-400 uppercase font-bold">Tamaño</span>
+          <span className="text-[10px] font-bold text-slate-600">{Math.round(currentScale * 100)}%</span>
         </div>
 
-        <button onClick={onZoomOut} className={btnClass + " " + btnInactive} title="Zoom -">
-          <ZoomOut size={20} />
+        <button onClick={onZoomOut} className={btnClass + " " + btnInactive} title="Achicar Nodos">
+          <Minimize size={20} />
         </button>
 
         <div className="w-px h-6 bg-slate-200 shrink-0 lg:w-6 lg:h-px"></div>
 
-        {/* ÚNICO BOTÓN DE DESCARGA */}
         <button 
           onClick={onOpenDownloadModal} 
           disabled={isExporting} 
@@ -95,7 +96,7 @@ export const BoardToolbar = ({
           {isExporting ? <Loader2 size={20} className="animate-spin text-blue-600" /> : <Download size={20} />}
         </button>
         
-        <button onClick={onClear} className={`${btnClass} bg-white text-red-400 hover:text-red-600 hover:bg-red-50`} title="Limpiar">
+        <button onClick={onClear} className={`${btnClass} bg-white text-red-400 hover:text-red-600 hover:bg-red-50`} title="Reiniciar Mapa">
           <RotateCcw size={20} />
         </button>
       </div>

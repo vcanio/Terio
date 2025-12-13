@@ -6,13 +6,11 @@ import { LEVELS, THEME } from "../utils/constants";
 
 type ToPngOptions = Parameters<typeof toPng>[1];
 
-// CAMBIO: Aceptamos containerRef y scale como argumentos
 export const useSluzkiBoard = (
   diagramRef: React.RefObject<HTMLDivElement | null> | undefined,
   containerRef: React.RefObject<HTMLDivElement | null>, 
   scale: number
 ) => {
-  // ELIMINADO: const containerRef = useRef<HTMLDivElement>(null); 
   const tableRef = useRef<HTMLDivElement>(null);
   const combinedRef = useRef<HTMLDivElement>(null);
   
@@ -62,16 +60,31 @@ export const useSluzkiBoard = (
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (isConnecting && sourceId && containerRef.current) {
-      const rect = containerRef.current.getBoundingClientRect();
-      const centerX = rect.width / 2;
-      const centerY = rect.height / 2;
-      
-      // CAMBIO: Dividimos por scale para ajustar la posición a las coordenadas internas
-      setMousePos({
-        x: (e.clientX - rect.left - centerX) / scale,
-        y: (e.clientY - rect.top - centerY) / scale,
-      });
+    if (isConnecting && sourceId) {
+      if (diagramRef?.current) {
+        const rect = diagramRef.current.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        
+        const currentScale = rect.width / 1000;
+
+        setMousePos({
+          x: (e.clientX - centerX) / currentScale,
+          y: (e.clientY - centerY) / currentScale,
+        });
+        return;
+      }
+
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        const centerX = rect.width / 2;
+        const centerY = rect.height / 2;
+        
+        setMousePos({
+          x: (e.clientX - rect.left - centerX) / scale,
+          y: (e.clientY - rect.top - centerY) / scale,
+        });
+      }
     }
   };
 
@@ -135,23 +148,33 @@ export const useSluzkiBoard = (
 
   const downloadImage = useCallback(async () => {
     const element = containerRef.current;
-    if (!element) return;
+    const targetElement = diagramRef?.current || element; 
+
+    if (!targetElement) return;
     setSourceId(null); setIsConnecting(false); setIsExporting(true);
+    
     const exportTask = new Promise<void>(async (resolve, reject) => {
       try {
         await new Promise((r) => setTimeout(r, 500));
+        
         let options: ToPngOptions = {
           cacheBust: true, pixelRatio: 2, backgroundColor: "#f8fafc",
           filter: (node: Node) => !(node instanceof Element && node.classList.contains("exclude-from-export")),
         };
-        if (diagramRef?.current) {
-          const containerRect = element.getBoundingClientRect();
-          const diagramRect = diagramRef.current.getBoundingClientRect();
-          const cropX = diagramRect.left - containerRect.left;
-          const cropY = diagramRect.top - containerRect.top;
-          options = { ...options, width: diagramRect.width, height: diagramRect.height, style: { transform: `translate(-${cropX}px, -${cropY}px)`, transformOrigin: "top left", width: `${containerRect.width}px`, height: `${containerRect.height}px` } };
+
+        if (targetElement === diagramRef?.current) {
+             options = { 
+                 ...options, 
+                 width: 1000, 
+                 height: 1000, 
+                 style: { 
+                     transform: 'scale(1)', 
+                     transformOrigin: 'top left' 
+                 } 
+             };
         }
-        const dataUrl = await toPng(element, options);
+
+        const dataUrl = await toPng(targetElement as HTMLElement, options);
         const link = document.createElement("a");
         link.download = `mapa-sluzki-${new Date().toISOString().slice(0,10)}.png`;
         link.href = dataUrl;

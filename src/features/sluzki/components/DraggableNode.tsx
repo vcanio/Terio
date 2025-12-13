@@ -69,7 +69,8 @@ export const DraggableNode = ({
         y.set(newY);
         onDrag(node.id, newX, newY);
       }}
-      className={`absolute z-20 group ${
+      // CAMBIO IMPORTANTE: Añadimos la clase 'nopan-node' aquí para excluirla del pan del mapa
+      className={`absolute z-20 group nopan-node ${
         isConnecting ? "cursor-crosshair" : "cursor-grab active:cursor-grabbing"
       }`}
       onClick={(e) => {
@@ -78,15 +79,11 @@ export const DraggableNode = ({
       }}
       dragListener={!isTarget}
     >
-      {/* ESTE ES EL DIV QUE CONTIENE EL VISUAL DEL NODO */}
       <motion.div
         initial={{ scale: 0, opacity: 0 }}
         animate={{ scale: scale, opacity: 1 }}
-        // AGREGAMOS ESTA LÍNEA: Aumenta un 10% la escala actual al pasar el mouse
         whileHover={{ scale: scale * 1.1 }}
-        // La transición ya existente suavizará el efecto hover
         transition={{ duration: 0.2, ease: "easeOut" }}
-        
         className={`
           w-10 h-10 md:w-12 md:h-12 rounded-full flex flex-col items-center justify-center
           border-[3px] shadow-sm transition-colors duration-200 bg-white
