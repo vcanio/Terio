@@ -3,33 +3,48 @@ import { persist } from 'zustand/middleware';
 import { OSASession, OSAScaleValue } from '../types';
 
 interface OSAState {
-  activeSession: OSASession | null;
-  startSession: (userId: string) => void;
-  setResponse: (itemId: string, type: 'performance' | 'importance', value: OSAScaleValue) => void;
-  clearSession: () => void;
+  // Ahora guardamos un diccionario de sesiones: { "user-123": SessionA, "user-456": SessionB }
+  sessions: Record<string, OSASession>;
+
+  // Acciones
+  initSession: (userId: string) => void;
+  setResponse: (userId: string, itemId: string, type: 'performance' | 'importance', value: OSAScaleValue) => void;
+  clearAllSessions: () => void;
 }
 
 export const useOSAStore = create<OSAState>()(
   persist(
     (set, get) => ({
-      activeSession: null,
+      sessions: {},
 
-      startSession: (userId) => {
+      // Inicializa una sesión para el usuario si no existe
+      initSession: (userId) => {
+        const { sessions } = get();
+        
+        // Si ya existe sesión para este usuario, no hacemos nada
+        if (sessions[userId]) return;
+
+        // Si no existe, creamos una nueva
         set({
-          activeSession: {
-            id: crypto.randomUUID(),
-            userId,
-            date: new Date().toISOString(),
-            responses: {},
+          sessions: {
+            ...sessions,
+            [userId]: {
+              id: crypto.randomUUID(),
+              userId,
+              date: new Date().toISOString(),
+              responses: {},
+            }
           }
         });
       },
 
-      setResponse: (itemId, type, value) => {
-        const session = get().activeSession;
-        if (!session) return;
+      setResponse: (userId, itemId, type, value) => {
+        const { sessions } = get();
+        const userSession = sessions[userId];
 
-        const currentResponse = session.responses[itemId] || { itemId, performance: null, importance: null };
+        if (!userSession) return;
+
+        const currentResponse = userSession.responses[itemId] || { itemId, performance: null, importance: null };
         
         const newResponse = {
             ...currentResponse,
@@ -37,17 +52,20 @@ export const useOSAStore = create<OSAState>()(
         };
 
         set({
-          activeSession: {
-            ...session,
-            responses: {
-              ...session.responses,
-              [itemId]: newResponse
+          sessions: {
+            ...sessions,
+            [userId]: {
+              ...userSession,
+              responses: {
+                ...userSession.responses,
+                [itemId]: newResponse
+              }
             }
           }
         });
       },
 
-      clearSession: () => set({ activeSession: null }),
+      clearAllSessions: () => set({ sessions: {} }),
     }),
     { name: 'terio-osa-storage' }
   )

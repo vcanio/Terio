@@ -8,14 +8,14 @@ import { FileText, AlertCircle } from "lucide-react";
 
 export default function OSAPage() {
   const { activeUserId } = useClinicalUserStore();
-  const { activeSession, startSession } = useOSAStore();
+  const { initSession } = useOSAStore();
 
-  // Iniciar sesión automáticamente si hay usuario pero no sesión OSA
+  // Cada vez que cambia el usuario activo, inicializamos (o cargamos) su sesión
   useEffect(() => {
-    if (activeUserId && !activeSession) {
-      startSession(activeUserId);
+    if (activeUserId) {
+      initSession(activeUserId);
     }
-  }, [activeUserId, activeSession, startSession]);
+  }, [activeUserId, initSession]);
 
   if (!activeUserId) {
     return (

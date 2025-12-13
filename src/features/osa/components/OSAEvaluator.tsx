@@ -1,14 +1,19 @@
 "use client";
 
 import { useOSAStore } from "../store/useOSAStore";
+import { useClinicalUserStore } from "@/features/users/store/useClinicalStore";
 import { OSA_ITEMS, PERFORMANCE_SCALE, IMPORTANCE_SCALE } from "../utils/constants";
 import { OSAScaleValue } from "../types";
 import { Check } from "lucide-react";
 
 export const OSAEvaluator = () => {
-  const { activeSession, setResponse } = useOSAStore();
+  const { activeUserId } = useClinicalUserStore();
+  const { sessions, setResponse } = useOSAStore();
 
-  if (!activeSession) return null;
+  // Seleccionamos la sesión específica del usuario activo
+  const activeSession = activeUserId ? sessions[activeUserId] : null;
+
+  if (!activeSession || !activeUserId) return null;
 
   return (
     <div className="max-w-5xl mx-auto pb-20">
@@ -42,7 +47,8 @@ export const OSAEvaluator = () => {
                   {PERFORMANCE_SCALE.map((scale) => (
                     <button
                       key={scale.value}
-                      onClick={() => setResponse(item.id, 'performance', scale.value as OSAScaleValue)}
+                      // Pasamos el activeUserId al hacer clic
+                      onClick={() => setResponse(activeUserId, item.id, 'performance', scale.value as OSAScaleValue)}
                       className={`
                         w-full aspect-square rounded-lg flex flex-col items-center justify-center gap-1 transition-all border
                         ${perfVal === scale.value 
@@ -62,7 +68,8 @@ export const OSAEvaluator = () => {
                   {IMPORTANCE_SCALE.map((scale) => (
                     <button
                       key={scale.value}
-                      onClick={() => setResponse(item.id, 'importance', scale.value as OSAScaleValue)}
+                      // Pasamos el activeUserId al hacer clic
+                      onClick={() => setResponse(activeUserId, item.id, 'importance', scale.value as OSAScaleValue)}
                       className={`
                         w-full aspect-square rounded-lg flex flex-col items-center justify-center gap-1 transition-all border
                         ${impVal === scale.value 
