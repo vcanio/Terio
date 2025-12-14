@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation'; // Agregamos useRouter
-import { LayoutDashboard, Network, Settings, PanelLeftClose, X, ClipboardCheck, User, Power } from 'lucide-react';
+import { LayoutDashboard, Network, Settings, PanelLeftClose, X, ClipboardCheck, User, Power, Activity } from 'lucide-react';
 import { useClinicalUserStore } from "@/features/users/store/useClinicalStore"; // Importar Stores
 import { useSluzkiStore } from "@/features/sluzki/store/useSluzkiStore";
 import { useVQStore } from "@/features/vq/store/useVQStore";
@@ -17,6 +17,7 @@ const menuItems = [
   { name: 'Mapa de Red', href: '/tools/sluzki', icon: Network },
   { name: 'Escala OSA', href: '/tools/osa', icon: ClipboardCheck, hidden: false },
   { name: 'OPHI-II', href: '/tools/ophi', icon: Network, hidden: true },
+  { name: 'Indice de Barthel', href: '/tools/barthel', icon: Activity, hidden: false },
   { name: 'Cuestionario Volitivo', href: '/tools/vq', icon: ClipboardCheck, hidden: false },
 ];
 
