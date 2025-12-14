@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation'; // Agregamos useRouter
-import { LayoutDashboard, Network, Settings, PanelLeftClose, X, ClipboardCheck, User, Power, Activity } from 'lucide-react';
+import { LayoutDashboard, Network, Settings, PanelLeftClose, X, ClipboardCheck, User, Power, Activity, Target } from 'lucide-react';
 import { useClinicalUserStore } from "@/features/users/store/useClinicalStore"; // Importar Stores
 import { useSluzkiStore } from "@/features/sluzki/store/useSluzkiStore";
 import { useVQStore } from "@/features/vq/store/useVQStore";
@@ -19,6 +19,7 @@ const menuItems = [
   { name: 'OPHI-II', href: '/tools/ophi', icon: Network, hidden: true },
   { name: 'Indice de Barthel', href: '/tools/barthel', icon: Activity, hidden: false },
   { name: 'Cuestionario Volitivo', href: '/tools/vq', icon: ClipboardCheck, hidden: false },
+  { name: 'Medida Canadiense (COPM)', href: '/tools/copm', icon: Target, hidden: false },
 ];
 
 export function Sidebar({ isOpen, toggle }: SidebarProps) {
