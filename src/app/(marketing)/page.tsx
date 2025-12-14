@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -121,16 +122,18 @@ export default function LandingPage() {
       <section className="px-4 mb-20">
         <div className="max-w-5xl mx-auto bg-white rounded-3xl border border-slate-200 shadow-2xl shadow-blue-900/5 overflow-hidden p-2 md:p-4">
             <div className="bg-slate-50 rounded-2xl border border-slate-100 overflow-hidden aspect-video relative group">
-                {/* Aquí podrías poner una captura de pantalla real del SluzkiBoard */}
-                <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="text-center">
-                       <Network size={64} className="text-blue-200 mx-auto mb-4" />
-                       <p className="text-slate-400 font-medium">Vista Previa del Dashboard</p>
-                    </div>
-                </div>
                 
-                {/* Overlay decorativo */}
-                <div className="absolute inset-0 bg-linear-to-t from-white/50 to-transparent pointer-events-none"></div>
+                {/* --- AQUÍ ESTÁ EL CAMBIO --- */}
+                <Image 
+                  src="/dashboard.png" // Asegúrate que el nombre coincida con tu archivo en public/
+                  alt="Vista previa del Dashboard de Terio"
+                  fill
+                  className="object-cover object-top" // object-top alinea la imagen arriba
+                  priority // Carga prioritaria para mejorar el rendimiento visual
+                />
+
+                {/* Overlay decorativo (opcional, puedes dejarlo o quitarlo) */}
+                <div className="absolute inset-0 bg-linear-to-t from-white/10 to-transparent pointer-events-none"></div>
             </div>
         </div>
       </section>
